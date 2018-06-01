@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -23,7 +24,7 @@ func (tr *Mock) HandleFunc(path string, h http.HandlerFunc) {
 }
 
 // NewMock creates a registry mock
-func NewMock(t func(string)) (*Mock, error) {
+func NewMock(t func(error)) (*Mock, error) {
 	testReg := &Mock{handlers: make(map[string]http.HandlerFunc)}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,10 @@ func NewMock(t func(string)) (*Mock, error) {
 		for re, function := range testReg.handlers {
 			matched, err = regexp.MatchString(re, url)
 			if err != nil {
-				t("Error with handler regexp")
+				if t != nil {
+					t(err)
+				}
+				continue
 			}
 			if matched {
 				function(w, r)
@@ -42,8 +46,8 @@ func NewMock(t func(string)) (*Mock, error) {
 			}
 		}
 
-		if !matched {
-			t("Unable to match " + url + " with regexp")
+		if !matched && t != nil {
+			t(fmt.Errorf("Unable to match %s with regexp", url))
 		}
 	}))
 

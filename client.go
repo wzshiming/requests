@@ -11,6 +11,7 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"runtime"
 	"time"
 
 	"golang.org/x/net/publicsuffix"
@@ -82,7 +83,18 @@ func (c *Client) SetTLSClientConfig(config *tls.Config) *Client {
 	return c
 }
 
-// SetProxyFunc method sets the Proxy function for requests client.
+// SetKeepAlives method sets the keep alives.
+func (c *Client) SetKeepAlives(enable bool) *Client {
+	transport, err := c.getTransport()
+	if err != nil {
+		c.printError(err)
+		return c
+	}
+	transport.DisableKeepAlives = !enable
+	return c
+}
+
+// SetProxyFunc method sets the Proxy function.
 func (c *Client) SetProxyFunc(proxy func(*http.Request) (*url.URL, error)) *Client {
 	transport, err := c.getTransport()
 	if err != nil {
@@ -93,7 +105,7 @@ func (c *Client) SetProxyFunc(proxy func(*http.Request) (*url.URL, error)) *Clie
 	return c
 }
 
-// SetProxyURL method sets the Proxy URL for requests client.
+// SetProxyURL method sets the Proxy URL.
 func (c *Client) SetProxyURL(u *url.URL) *Client {
 	return c.SetProxyFunc(http.ProxyURL(u))
 }
@@ -119,12 +131,15 @@ func (c *Client) WithSystemCertPool() *Client {
 		c.printError(err)
 		return c
 	}
-	ca, err := x509.SystemCertPool()
-	if err != nil {
-		c.printError(err)
-		return c
+
+	if runtime.GOOS != "windows" {
+		ca, err := x509.SystemCertPool()
+		if err != nil {
+			c.printError(err)
+			return c
+		}
+		config.RootCAs = ca
 	}
-	config.RootCAs = ca
 	return c
 }
 

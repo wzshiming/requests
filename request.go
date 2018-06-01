@@ -213,19 +213,53 @@ func (r *Request) Do(method, rawurl string) (*Response, error) {
 	r.method = method
 	r.SetURL(rawurl)
 
+	// fill path
+	if len(r.pathParam) != 0 {
+		err := toPath(r.baseURL, r.pathParam)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// fill query
+	if len(r.queryParam) != 0 {
+		err := toQuery(r.baseURL, r.queryParam)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if r.body == nil {
+		if len(r.multiFiles) != 0 { // fill multpair
+			body, contentType, err := toMulti(r.formParam, r.multiFiles)
+			if err != nil {
+				return nil, err
+			}
+			r.SetContentType(contentType)
+			r.body = body
+		} else { // fill form
+			body, err := toForm(r.formParam)
+			if err != nil {
+				return nil, err
+			}
+			r.SetContentType(MimeURLEncoded)
+			r.body = body
+		}
+	}
+
 	req, err := http.NewRequest(method, r.baseURL.String(), r.body)
 	if err != nil {
 		return nil, err
 	}
-	r.rawRequest = req
 
-	for _, v := range r.headerParam {
-		req.Header.Set(v.Param, v.Value)
+	// fill header
+	if len(r.headerParam) != 0 {
+		err := toHeader(req, r.headerParam)
+		if err != nil {
+			return nil, err
+		}
 	}
-	// TODO
-	//	headerParam     []*paramPair
-	//	queryParam      []*paramPair
-	//	pathParam       []*paramPair
 
+	r.rawRequest = req
 	return r.client.do(r)
 }

@@ -2,41 +2,47 @@ package requests
 
 import (
 	"net/http"
-	"net/url"
 	"testing"
-
-	ffmt "gopkg.in/ffmt.v1"
 )
 
-func TestA(t *testing.T) {
-	mock, err := NewMock(func(s string) {
-		t.Log(s)
-	})
-	if err != nil {
-		t.Log(err)
-	}
-	mock.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		ffmt.P(r)
-	})
-	host := mock.URL()
-	u, err := url.Parse(host)
-	if err != nil {
-		t.Error(err)
-	}
-	cli := NewClient().
-		WithLogger().
-		WithSystemCertPool().
-		WithCookieJar().
-		NewRequest().
-		SetBaseURL(u).
-		SetHeader(HeaderAccept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8").
-		SetHeader("Accept-Language", "zh-CN,zh;q=0.9,zh-TW;q=0.8,zh-HK;q=0.7").
-		SetHeader(HeaderUserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36")
+func TestParam(t *testing.T) {
 
-	resp, err := cli.Get("/")
+	mock, err := NewMock(func(err error) {
+		t.Error(err)
+	})
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log(string(resp.Body()))
+	mock.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			t.Error(err)
+			return
+		}
+		if r.URL.Path != "/url" {
+			t.Error("parameter error")
+		}
+		u, p, _ := r.BasicAuth()
+		if u != "u" || p != "p" {
+			t.Error("parameter error")
+		}
+		if r.FormValue("q") != "query" {
+			t.Error("parameter error")
+		}
+
+		if r.FormValue("f") != "form" {
+			t.Error("parameter error")
+		}
+	})
+	cli := NewRequest().
+		SetURL(mock.URL()).
+		SetForm("f", "form").
+		SetQuery("q", "query").
+		SetBasicAuth("u", "p").
+		SetPath("p", "url")
+	_, err = cli.Post("/{p}")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 }
