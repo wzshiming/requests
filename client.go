@@ -205,8 +205,8 @@ func (c *Client) do(req *Request) (*Response, error) {
 	return response, nil
 }
 
-func (c *Client) printError(i interface{}) {
+func (c *Client) printError(err error) {
 	if c.log != nil {
-		c.log.Printf("ERROR %v", i)
+		c.log.Printf("ERROR %v", err.Error())
 	}
 }
