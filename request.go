@@ -1,7 +1,10 @@
 package requests
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"net/url"
@@ -128,6 +131,28 @@ func (r *Request) SetFile(param, fileName, contentType string, reader io.Reader)
 		ContentType: contentType,
 		Reader:      reader,
 	})
+	return r
+}
+
+// SetJSON method sets the data encoded by JSON to the request body.
+func (r *Request) SetJSON(i interface{}) *Request {
+	data, err := json.Marshal(i)
+	if err != nil {
+		r.client.printError(err)
+	}
+	r.body = bytes.NewReader(data)
+	r.SetContentType(MimeJSON)
+	return r
+}
+
+// SetXML method sets the data encoded by XML to the request body.
+func (r *Request) SetXML(i interface{}) *Request {
+	data, err := xml.Marshal(i)
+	if err != nil {
+		r.client.printError(err)
+	}
+	r.body = bytes.NewReader(data)
+	r.SetContentType(MimeXML)
 	return r
 }
 
