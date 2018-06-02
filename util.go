@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 )
 
 // In is located in
@@ -60,6 +61,83 @@ type paramPair struct {
 	Value string
 }
 
+type paramPairs []*paramPair
+
+func (t *paramPairs) add(i int, n *paramPair) {
+	*t = append(*t, n)
+	l := len(*t)
+	copy((*t)[i+1:l], (*t)[i:l-1])
+	(*t)[i] = n
+}
+
+func (t *paramPairs) Add(param, value string) {
+	i := t.SearchIndex(param)
+	t.add(i, &paramPair{
+		Param: param,
+		Value: value,
+	})
+}
+
+func (t *paramPairs) AddReplace(param, value string) {
+	i := t.SearchIndex(param)
+	tt := t.Index(i - 1)
+	if tt == nil || tt.Param != param {
+		t.add(i, &paramPair{
+			Param: param,
+			Value: value,
+		})
+	} else {
+		tt.Value = value
+	}
+	return
+}
+
+func (t *paramPairs) AddNoRepeat(param, value string) {
+	i := t.SearchIndex(param)
+	tt := t.Index(i - 1)
+	if tt == nil || tt.Param != param {
+		t.add(i, &paramPair{
+			Param: param,
+			Value: value,
+		})
+	}
+	return
+}
+
+func (t *paramPairs) Search(name string) (*paramPair, bool) {
+	i := t.SearchIndex(name)
+	if i == 0 {
+		return nil, false
+	}
+	tt := t.Index(i - 1)
+	if tt == nil || tt.Param != name {
+		return nil, false
+	}
+	return tt, true
+}
+
+func (t *paramPairs) SearchIndex(name string) int {
+	i := sort.Search(t.Len(), func(i int) bool {
+		d := t.Index(i)
+		if d == nil {
+			return false
+		}
+		return d.Param < name
+	})
+	return i
+}
+
+func (t *paramPairs) Index(i int) *paramPair {
+	if i >= t.Len() || i < 0 {
+		return nil
+	}
+	return (*t)[i]
+}
+
+func (t *paramPairs) Len() int {
+	return len(*t)
+}
+
 // multiFile represent custom data part for multipart request
 type multiFile struct {
 	Param       string
@@ -68,14 +146,16 @@ type multiFile struct {
 	io.Reader
 }
 
-func toHeader(req *http.Request, p []*paramPair) error {
+type multiFiles []*multiFile
+
+func toHeader(req *http.Request, p paramPairs) error {
 	for _, v := range p {
 		req.Header.Add(v.Param, v.Value)
 	}
 	return nil
 }
 
-func toQuery(u *url.URL, p []*paramPair) error {
+func toQuery(u *url.URL, p paramPairs) error {
 	param := u.Query()
 	for _, v := range p {
 		param.Add(v.Param, v.Value)
@@ -86,7 +166,7 @@ func toQuery(u *url.URL, p []*paramPair) error {
 
 var toPathCompile = regexp.MustCompile(`\{.*\}`)
 
-func toPath(u *url.URL, p []*paramPair) error {
+func toPath(u *url.URL, p paramPairs) error {
 	u.Path = toPathCompile.ReplaceAllStringFunc(u.Path, func(s string) string {
 		k := s[1 : len(s)-1]
 		// Because the number is small, it's faster to use the loop directly
@@ -100,7 +180,7 @@ func toPath(u *url.URL, p []*paramPair) error {
 	return nil
 }
 
-func toForm(p []*paramPair) (io.Reader, error) {
+func toForm(p paramPairs) (io.Reader, error) {
 	vs := url.Values{}
 	for _, v := range p {
 		vs.Add(v.Param, v.Value)
@@ -108,7 +188,7 @@ func toForm(p []*paramPair) (io.Reader, error) {
 	return bytes.NewBufferString(vs.Encode()), nil
 }
 
-func toMulti(p []*paramPair, m []*multiFile) (io.Reader, string, error) {
+func toMulti(p paramPairs, m multiFiles) (io.Reader, string, error) {
 	buf := bytes.NewBuffer(nil)
 	mw := multipart.NewWriter(buf)
 

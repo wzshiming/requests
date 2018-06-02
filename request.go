@@ -16,11 +16,11 @@ import (
 type Request struct {
 	baseURL         *url.URL
 	method          string
-	headerParam     []*paramPair
-	queryParam      []*paramPair
-	pathParam       []*paramPair
-	formParam       []*paramPair
-	multiFiles      []*multiFile
+	headerParam     paramPairs
+	queryParam      paramPairs
+	pathParam       paramPairs
+	formParam       paramPairs
+	multiFiles      multiFiles
 	body            io.Reader
 	sendAt          time.Time
 	rawRequest      *http.Request
@@ -95,40 +95,72 @@ func (r *Request) isCancelled() bool {
 	return false
 }
 
-// SetHeader method is to set a single header field and its value in the current request.
+// SetHeader method is to sets a single header field and its value in the current request.
 func (r *Request) SetHeader(param, value string) *Request {
 	param = textproto.CanonicalMIMEHeaderKey(param)
-	r.headerParam = append(r.headerParam, &paramPair{
-		Param: param,
-		Value: value,
-	})
+	r.headerParam.AddReplace(param, value)
+	return r
+}
+
+// AddHeader method is to adds a single header field and its value in the current request.
+func (r *Request) AddHeader(param, value string) *Request {
+	param = textproto.CanonicalMIMEHeaderKey(param)
+	r.headerParam.Add(param, value)
+	return r
+}
+
+// AddHeaderIfNot method is to adds a single header field and its value in the current request if not.
+func (r *Request) AddHeaderIfNot(param, value string) *Request {
+	param = textproto.CanonicalMIMEHeaderKey(param)
+	r.headerParam.AddNoRepeat(param, value)
 	return r
 }
 
 // SetPath method sets single path parameter and its value in the current request.
 func (r *Request) SetPath(param, value string) *Request {
-	r.pathParam = append(r.pathParam, &paramPair{
-		Param: param,
-		Value: value,
-	})
+	r.pathParam.AddReplace(param, value)
 	return r
 }
 
-// SetQuery method sets single parameter and its value in the current request.
+// AddPathIfNot method is to adds a single path parameter and its value in the current request if not.
+func (r *Request) AddPathIfNot(param, value string) *Request {
+	r.pathParam.AddNoRepeat(param, value)
+	return r
+}
+
+// SetQuery method sets single query parameter and its value in the current request.
 func (r *Request) SetQuery(param, value string) *Request {
-	r.queryParam = append(r.queryParam, &paramPair{
-		Param: param,
-		Value: value,
-	})
+	r.queryParam.AddReplace(param, value)
+	return r
+}
+
+// AddQuery method is to adds a single query field and its value in the current request.
+func (r *Request) AddQuery(param, value string) *Request {
+	r.queryParam.Add(param, value)
+	return r
+}
+
+// AddQueryIfNot method is to adds a single query field and its value in the current request if not.
+func (r *Request) AddQueryIfNot(param, value string) *Request {
+	r.queryParam.AddNoRepeat(param, value)
 	return r
 }
 
 // SetForm method appends multiple form parameters with multi-value
 func (r *Request) SetForm(param, value string) *Request {
-	r.formParam = append(r.formParam, &paramPair{
-		Param: param,
-		Value: value,
-	})
+	r.formParam.AddReplace(param, value)
+	return r
+}
+
+// AddForm method is to adds a single from field and its value in the current request.
+func (r *Request) AddForm(param, value string) *Request {
+	r.formParam.Add(param, value)
+	return r
+}
+
+// AddFormIfNot method is to adds a single from field and its value in the current request if not.
+func (r *Request) AddFormIfNot(param, value string) *Request {
+	r.formParam.AddNoRepeat(param, value)
 	return r
 }
 
@@ -148,9 +180,10 @@ func (r *Request) SetJSON(i interface{}) *Request {
 	data, err := json.Marshal(i)
 	if err != nil {
 		r.client.printError(err)
+		return r
 	}
 	r.body = bytes.NewReader(data)
-	r.SetContentType(MimeJSON)
+	r.AddHeaderIfNot(HeaderContentType, MimeJSON)
 	return r
 }
 
@@ -159,9 +192,10 @@ func (r *Request) SetXML(i interface{}) *Request {
 	data, err := xml.Marshal(i)
 	if err != nil {
 		r.client.printError(err)
+		return r
 	}
 	r.body = bytes.NewReader(data)
-	r.SetContentType(MimeXML)
+	r.AddHeaderIfNot(HeaderContentType, MimeXML)
 	return r
 }
 
@@ -273,14 +307,14 @@ func (r *Request) Do() (*Response, error) {
 			if err != nil {
 				return nil, err
 			}
-			r.SetContentType(contentType)
+			r.AddHeaderIfNot(HeaderContentType, contentType)
 			r.body = body
 		} else { // fill form
 			body, err := toForm(r.formParam)
 			if err != nil {
 				return nil, err
 			}
-			r.SetContentType(MimeURLEncoded)
+			r.AddHeaderIfNot(HeaderContentType, MimeURLEncoded)
 			r.body = body
 		}
 	}
@@ -291,11 +325,10 @@ func (r *Request) Do() (*Response, error) {
 	}
 
 	// fill header
-	if len(r.headerParam) != 0 {
-		err := toHeader(req, r.headerParam)
-		if err != nil {
-			return nil, err
-		}
+	r.AddHeaderIfNot(HeaderUserAgent, DefaultUserAgentValue)
+	err = toHeader(req, r.headerParam)
+	if err != nil {
+		return nil, err
 	}
 
 	r.rawRequest = req
