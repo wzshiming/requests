@@ -167,51 +167,55 @@ func (r *Request) SetDiscardResponse(discard bool) *Request {
 	return r
 }
 
+// SetMethod method sets method in the HTTP request.
+func (r *Request) SetMethod(method string) *Request {
+	r.method = method
+	return r
+}
+
 // Head method does HEAD HTTP request.
 func (r *Request) Head(url string) (*Response, error) {
-	return r.Do(MethodHead, url)
+	return r.SetMethod(MethodHead).SetURL(url).Do()
 }
 
 // Get method does GET HTTP request.
 func (r *Request) Get(url string) (*Response, error) {
-	return r.Do(MethodGet, url)
+	return r.SetMethod(MethodGet).SetURL(url).Do()
 }
 
 // Post method does POST HTTP request.
 func (r *Request) Post(url string) (*Response, error) {
-	return r.Do(MethodPost, url)
+	return r.SetMethod(MethodPost).SetURL(url).Do()
 }
 
 // Put method does PUT HTTP request.
 func (r *Request) Put(url string) (*Response, error) {
-	return r.Do(MethodPut, url)
+	return r.SetMethod(MethodPut).SetURL(url).Do()
 }
 
 // Delete method does DELETE HTTP request.
 func (r *Request) Delete(url string) (*Response, error) {
-	return r.Do(MethodDelete, url)
+	return r.SetMethod(MethodDelete).SetURL(url).Do()
 }
 
 // Options method does OPTIONS HTTP request.
 func (r *Request) Options(url string) (*Response, error) {
-	return r.Do(MethodOptions, url)
+	return r.SetMethod(MethodOptions).SetURL(url).Do()
 }
 
-// Trace method does TRACE HTTP request. It's defined in section 4.3.2 of RFC7231.
+// Trace method does TRACE HTTP request.
 func (r *Request) Trace(url string) (*Response, error) {
-	return r.Do(MethodTrace, url)
+	return r.SetMethod(MethodTrace).SetURL(url).Do()
 }
 
-// Patch method does PATCH HTTP request. It's defined in section 2 of RFC5789.
+// Patch method does PATCH HTTP request.
 func (r *Request) Patch(url string) (*Response, error) {
-	return r.Do(MethodPatch, url)
+	return r.SetMethod(MethodPatch).SetURL(url).Do()
 }
 
 // Do method performs the HTTP request
-func (r *Request) Do(method, rawurl string) (*Response, error) {
+func (r *Request) Do() (*Response, error) {
 	r = r.Clone()
-	r.method = method
-	r.SetURL(rawurl)
 
 	// fill path
 	if len(r.pathParam) != 0 {
@@ -247,7 +251,7 @@ func (r *Request) Do(method, rawurl string) (*Response, error) {
 		}
 	}
 
-	req, err := http.NewRequest(method, r.baseURL.String(), r.body)
+	req, err := http.NewRequest(r.method, r.baseURL.String(), r.body)
 	if err != nil {
 		return nil, err
 	}
