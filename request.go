@@ -80,6 +80,20 @@ func (r *Request) SetContext(ctx context.Context) *Request {
 	return r
 }
 
+// SetTimeout method sets the timeout for current Request.
+func (r *Request) SetTimeout(timeout time.Duration) *Request {
+	return r.SetDeadline(time.Now().Add(timeout))
+}
+
+// SetDeadline method sets the deadline for current Request.
+func (r *Request) SetDeadline(d time.Time) *Request {
+	if r.ctx == nil {
+		r.ctx = context.TODO()
+	}
+	r.ctx, _ = context.WithDeadline(r.ctx, d)
+	return r
+}
+
 func (r *Request) withContext() {
 	if r.ctx != nil {
 		r.rawRequest = r.rawRequest.WithContext(r.ctx)
@@ -87,12 +101,7 @@ func (r *Request) withContext() {
 }
 
 func (r *Request) isCancelled() bool {
-	if r.ctx != nil {
-		if r.ctx.Err() != nil {
-			return true
-		}
-	}
-	return false
+	return r.ctx != nil && r.ctx.Err() != nil
 }
 
 // SetHeader method is to sets a single header field and its value in the current request.
@@ -243,48 +252,50 @@ func (r *Request) SetMethod(method string) *Request {
 
 // Head method does HEAD HTTP request.
 func (r *Request) Head(url string) (*Response, error) {
-	return r.SetMethod(MethodHead).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodHead).SetURL(url).do()
 }
 
 // Get method does GET HTTP request.
 func (r *Request) Get(url string) (*Response, error) {
-	return r.SetMethod(MethodGet).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodGet).SetURL(url).do()
 }
 
 // Post method does POST HTTP request.
 func (r *Request) Post(url string) (*Response, error) {
-	return r.SetMethod(MethodPost).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodPost).SetURL(url).do()
 }
 
 // Put method does PUT HTTP request.
 func (r *Request) Put(url string) (*Response, error) {
-	return r.SetMethod(MethodPut).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodPut).SetURL(url).do()
 }
 
 // Delete method does DELETE HTTP request.
 func (r *Request) Delete(url string) (*Response, error) {
-	return r.SetMethod(MethodDelete).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodDelete).SetURL(url).do()
 }
 
 // Options method does OPTIONS HTTP request.
 func (r *Request) Options(url string) (*Response, error) {
-	return r.SetMethod(MethodOptions).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodOptions).SetURL(url).do()
 }
 
 // Trace method does TRACE HTTP request.
 func (r *Request) Trace(url string) (*Response, error) {
-	return r.SetMethod(MethodTrace).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodTrace).SetURL(url).do()
 }
 
 // Patch method does PATCH HTTP request.
 func (r *Request) Patch(url string) (*Response, error) {
-	return r.SetMethod(MethodPatch).SetURL(url).Do()
+	return r.Clone().SetMethod(MethodPatch).SetURL(url).do()
 }
 
 // Do method performs the HTTP request
 func (r *Request) Do() (*Response, error) {
-	r = r.Clone()
+	return r.Clone().do()
+}
 
+func (r *Request) do() (*Response, error) {
 	// fill path
 	if len(r.pathParam) != 0 {
 		err := toPath(r.baseURL, r.pathParam)
@@ -332,5 +343,6 @@ func (r *Request) Do() (*Response, error) {
 	}
 
 	r.rawRequest = req
+	r.withContext()
 	return r.client.do(r)
 }
