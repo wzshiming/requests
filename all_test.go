@@ -3,10 +3,10 @@ package requests
 import (
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestParam(t *testing.T) {
-
 	mock, err := NewMock(func(err error) {
 		t.Error(err)
 	})
@@ -43,6 +43,24 @@ func TestParam(t *testing.T) {
 	_, err = cli.Post("/{p}")
 	if err != nil {
 		t.Error(err)
+		return
+	}
+}
+
+func TestContext(t *testing.T) {
+	mock, err := NewMock(func(err error) {
+		t.Error(err)
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = NewRequest().
+		SetTimeout(time.Microsecond).
+		SetURL(mock.URL()).
+		Do()
+	if err == nil {
+		t.Error("No timely interruption")
 		return
 	}
 }

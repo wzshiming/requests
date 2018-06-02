@@ -26,7 +26,6 @@ func (tr *Mock) HandleFunc(path string, h http.HandlerFunc) {
 // NewMock creates a registry mock
 func NewMock(t func(error)) (*Mock, error) {
 	testReg := &Mock{handlers: make(map[string]http.HandlerFunc)}
-
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL.String()
 

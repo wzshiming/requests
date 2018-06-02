@@ -11,18 +11,6 @@ import (
 	"sort"
 )
 
-// In is located in
-type In uint8
-
-const (
-	_ In = iota
-	Header
-	Path
-	Query
-	Body
-	Form
-)
-
 const (
 	MethodGet     = "GET"
 	MethodHead    = "HEAD"
