@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"io"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"time"
 )
@@ -26,6 +27,13 @@ type Request struct {
 	client          *Client
 	ctx             context.Context
 	discardResponse bool
+}
+
+func newRequest(c *Client) *Request {
+	return &Request{
+		client: c,
+		method: MethodGet,
+	}
 }
 
 // Clone method clone the request
@@ -89,6 +97,7 @@ func (r *Request) isCancelled() bool {
 
 // SetHeader method is to set a single header field and its value in the current request.
 func (r *Request) SetHeader(param, value string) *Request {
+	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam = append(r.headerParam, &paramPair{
 		Param: param,
 		Value: value,

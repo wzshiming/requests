@@ -33,9 +33,7 @@ type Client struct {
 
 // NewRequest method creates a request instance.
 func (c *Client) NewRequest() *Request {
-	return &Request{
-		client: c,
-	}
+	return newRequest(c)
 }
 
 // SetCookieJar method set cookie jar.

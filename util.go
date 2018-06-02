@@ -6,7 +6,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/textproto"
 	"net/url"
 	"regexp"
 )
@@ -23,7 +22,7 @@ const (
 	Form
 )
 
-var (
+const (
 	MethodGet     = "GET"
 	MethodHead    = "HEAD"
 	MethodPost    = "POST"
@@ -42,12 +41,12 @@ var (
 	MimeURLEncoded  = "application/x-www-form-urlencoded" + CharsetUTF8
 	MimeFormData    = "multipart/form-data" + CharsetUTF8
 
-	HeaderUserAgent       = textproto.CanonicalMIMEHeaderKey("User-Agent")
-	HeaderAccept          = textproto.CanonicalMIMEHeaderKey("Accept")
-	HeaderContentType     = textproto.CanonicalMIMEHeaderKey("Content-Type")
-	HeaderContentLength   = textproto.CanonicalMIMEHeaderKey("Content-Length")
-	HeaderContentEncoding = textproto.CanonicalMIMEHeaderKey("Content-Encoding")
-	HeaderAuthorization   = textproto.CanonicalMIMEHeaderKey("Authorization")
+	HeaderUserAgent       = "User-Agent"
+	HeaderAccept          = "Accept"
+	HeaderContentType     = "Content-Type"
+	HeaderContentLength   = "Content-Length"
+	HeaderContentEncoding = "Content-Encoding"
+	HeaderAuthorization   = "Authorization"
 )
 
 var (
