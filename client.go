@@ -30,9 +30,13 @@ const (
 
 // NewClient the create a client
 func NewClient() *Client {
-	return &Client{
+	c := &Client{
 		cli: &http.Client{},
 	}
+	c.SetSkipVerify(true).
+		WithLogger().
+		SetLogLevel(LogInfo)
+	return c
 }
 
 // Client contains basic
@@ -62,6 +66,9 @@ func (c *Client) SetCookieJar(jar *cookiejar.Jar) *Client {
 
 // WithCookieJar method with default cookie jar.
 func (c *Client) WithCookieJar() *Client {
+	if c.cli.Jar != nil {
+		return c
+	}
 	jar, err := cookiejar.New(&cookiejar.Options{
 		PublicSuffixList: publicsuffix.List,
 	})
@@ -85,6 +92,9 @@ func (c *Client) SetLogger(w io.Writer) *Client {
 
 // SetLogger method with logger.
 func (c *Client) WithLogger() *Client {
+	if c.log != nil {
+		return c
+	}
 	return c.SetLogger(os.Stdout)
 }
 

@@ -1,10 +1,6 @@
 package requests
 
-var defaul = NewClient().
-	SetSkipVerify(true).
-	WithLogger().
-	SetLogLevel(LogMessageHead).
-	WithCookieJar()
+var defaul = NewClient()
 
 func NewRequest() *Request {
 	return defaul.NewRequest()
