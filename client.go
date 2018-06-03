@@ -17,6 +17,16 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
+type logLevel uint8
+
+const (
+	LogIgnore logLevel = iota
+	LogError
+	LogInfo
+	LogMessageHead
+	LogMessageAll
+)
+
 // NewClient the create a client
 func NewClient() *Client {
 	return &Client{
@@ -26,9 +36,10 @@ func NewClient() *Client {
 
 // Client contains basic
 type Client struct {
-	cli   *http.Client
-	log   *log.Logger
-	proxy *url.URL
+	cli      *http.Client
+	log      *log.Logger
+	logLevel logLevel
+	proxy    *url.URL
 }
 
 // NewRequest method creates a request instance.
@@ -53,9 +64,15 @@ func (c *Client) WithCookieJar() *Client {
 	return c.SetCookieJar(jar)
 }
 
+// SetLogLevel method sets log level.
+func (c *Client) SetLogLevel(l logLevel) *Client {
+	c.logLevel = l
+	return c
+}
+
 // SetLogger method sets given writer for logging.
 func (c *Client) SetLogger(w io.Writer) *Client {
-	c.log = log.New(w, DefaultPrefix, log.LstdFlags)
+	c.log = log.New(w, "["+DefaultPrefix+"] ", 0)
 	return c
 }
 
@@ -178,6 +195,7 @@ func (c *Client) getTransport() (*http.Transport, error) {
 
 // do executes and returns response
 func (c *Client) do(req *Request) (*Response, error) {
+	c.printRequest(req)
 	req.sendAt = time.Now()
 	resp, err := c.cli.Do(req.rawRequest)
 	if err != nil {
@@ -202,11 +220,38 @@ func (c *Client) do(req *Request) (*Response, error) {
 		body:        body,
 		recvAt:      time.Now(),
 	}
+	c.printResponse(response)
 	return response, nil
 }
 
 func (c *Client) printError(err error) {
+	if c.log != nil && c.logLevel >= LogError {
+		c.log.Printf("Error: %v", err.Error())
+	}
+}
+
+func (c *Client) printRequest(r *Request) {
 	if c.log != nil {
-		c.log.Printf("ERROR %v", err.Error())
+		switch c.logLevel {
+		case LogInfo:
+			c.log.Printf("Request: %s", r.String())
+		case LogMessageHead:
+			c.log.Printf("Request: %s", r.MessageHead())
+		case LogMessageAll:
+			c.log.Printf("Request: %s", r.Message())
+		}
+	}
+}
+
+func (c *Client) printResponse(r *Response) {
+	if c.log != nil {
+		switch c.logLevel {
+		case LogInfo:
+			c.log.Printf("Response: %s", r.String())
+		case LogMessageHead:
+			c.log.Printf("Response: %s", r.MessageHead())
+		case LogMessageAll:
+			c.log.Printf("Response: %s", r.Message())
+		}
 	}
 }

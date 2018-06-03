@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	DefaultPrefix         = "REQUESTS "
+	DefaultPrefix         = "REQUESTS"
 	DefaultUserAgentValue = DefaultPrefix + " - https://github.com/wzshiming/requests"
 )
 
@@ -51,8 +51,14 @@ type paramPair struct {
 
 type paramPairs []*paramPair
 
+func (t *paramPairs) Clone() paramPairs {
+	n := make(paramPairs, len(*t))
+	copy(n, *t)
+	return n
+}
+
 func (t *paramPairs) add(i int, n *paramPair) {
-	*t = append(*t, n)
+	*t = append(*t, nil)
 	l := len(*t)
 	copy((*t)[i+1:l], (*t)[i:l-1])
 	(*t)[i] = n
@@ -136,26 +142,25 @@ type multiFile struct {
 
 type multiFiles []*multiFile
 
-func toHeader(req *http.Request, p paramPairs) error {
+func toHeader(header http.Header, p paramPairs) (http.Header, error) {
 	for _, v := range p {
-		req.Header.Add(v.Param, v.Value)
+		header.Add(v.Param, v.Value)
 	}
-	return nil
+	return header, nil
 }
 
-func toQuery(u *url.URL, p paramPairs) error {
-	param := u.Query()
+func toQuery(rawQuery string, p paramPairs) (string, error) {
+	param, _ := url.ParseQuery(rawQuery)
 	for _, v := range p {
 		param.Add(v.Param, v.Value)
 	}
-	u.RawQuery = param.Encode()
-	return nil
+	return param.Encode(), nil
 }
 
 var toPathCompile = regexp.MustCompile(`\{.*\}`)
 
-func toPath(u *url.URL, p paramPairs) error {
-	u.Path = toPathCompile.ReplaceAllStringFunc(u.Path, func(s string) string {
+func toPath(path string, p paramPairs) (string, error) {
+	path = toPathCompile.ReplaceAllStringFunc(path, func(s string) string {
 		k := s[1 : len(s)-1]
 		// Because the number is small, it's faster to use the loop directly
 		for _, v := range p {
@@ -165,7 +170,7 @@ func toPath(u *url.URL, p paramPairs) error {
 		}
 		return s
 	})
-	return nil
+	return path, nil
 }
 
 func toForm(p paramPairs) (io.Reader, error) {

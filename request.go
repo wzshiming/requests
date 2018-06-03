@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/textproto"
 	"net/url"
 	"time"
@@ -40,6 +43,8 @@ func newRequest(c *Client) *Request {
 func (r *Request) Clone() *Request {
 	n := &Request{}
 	*n = *r
+	bu := *n.baseURL
+	n.baseURL = &bu
 	return n
 }
 
@@ -54,6 +59,16 @@ func (r *Request) SetBaseURL(u *url.URL) *Request {
 		pwd, _ := user.Password()
 		r.SetBasicAuth(user.Username(), pwd)
 		r.baseURL.User = nil
+	}
+
+	if r.baseURL.RawQuery != "" {
+		qs, _ := url.ParseQuery(r.baseURL.RawQuery)
+		for k, v := range qs {
+			for _, v := range v {
+				r.AddQuery(k, v)
+			}
+		}
+		r.baseURL.RawQuery = ""
 	}
 	return r
 }
@@ -296,20 +311,35 @@ func (r *Request) Do() (*Response, error) {
 }
 
 func (r *Request) do() (*Response, error) {
+	_, err := r.fill()
+	if err != nil {
+		return nil, err
+	}
+	r.withContext()
+	return r.client.do(r)
+}
+
+func (r *Request) fill() (*http.Request, error) {
+	if r.rawRequest != nil {
+		return r.rawRequest, nil
+	}
+
 	// fill path
 	if len(r.pathParam) != 0 {
-		err := toPath(r.baseURL, r.pathParam)
+		path, err := toPath(r.baseURL.Path, r.pathParam)
 		if err != nil {
 			return nil, err
 		}
+		r.baseURL.Path = path
 	}
 
 	// fill query
 	if len(r.queryParam) != 0 {
-		err := toQuery(r.baseURL, r.queryParam)
+		rq, err := toQuery(r.baseURL.RawQuery, r.queryParam)
 		if err != nil {
 			return nil, err
 		}
+		r.baseURL.RawQuery = rq
 	}
 
 	if r.body == nil {
@@ -337,12 +367,47 @@ func (r *Request) do() (*Response, error) {
 
 	// fill header
 	r.AddHeaderIfNot(HeaderUserAgent, DefaultUserAgentValue)
-	err = toHeader(req, r.headerParam)
+	header, err := toHeader(req.Header, r.headerParam)
 	if err != nil {
 		return nil, err
 	}
-
+	req.Header = header
 	r.rawRequest = req
-	r.withContext()
-	return r.client.do(r)
+	return req, nil
+}
+
+func (r *Request) messageBody() []byte {
+	body, _ := ioutil.ReadAll(r.rawRequest.Body)
+	r.rawRequest.Body.Close()
+	r.rawRequest.Body = ioutil.NopCloser(bytes.NewReader(body))
+	return body
+}
+
+func (r *Request) String() string {
+	return fmt.Sprintf("%s %s", r.method, r.baseURL.String())
+}
+
+func (r *Request) Message() string {
+	return r.message(true)
+}
+
+func (r *Request) MessageHead() string {
+	return r.message(false)
+}
+
+func (r *Request) message(body bool) string {
+	req, err := r.Clone().fill()
+	if err != nil {
+		return err.Error()
+	}
+
+	b, err := httputil.DumpRequest(req, false)
+	if err != nil {
+		return err.Error()
+	}
+
+	if body {
+		b = append(b, r.messageBody()...)
+	}
+	return string(b)
 }

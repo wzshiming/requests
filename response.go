@@ -2,8 +2,10 @@ package requests
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"time"
 )
 
@@ -58,4 +60,27 @@ func (r *Response) Size() int {
 // RawBody method exposes the HTTP raw response body.
 func (r *Response) RawBody() io.Reader {
 	return bytes.NewReader(r.body)
+}
+
+func (r *Response) String() string {
+	return fmt.Sprintf("%s %s %d %d %s", r.request.method, r.request.baseURL.String(), r.StatusCode(), r.Size(), r.Time())
+}
+
+func (r *Response) Message() string {
+	return r.message(true)
+}
+
+func (r *Response) MessageHead() string {
+	return r.message(false)
+}
+
+func (r *Response) message(body bool) string {
+	b, err := httputil.DumpResponse(r.rawResponse, false)
+	if err != nil {
+		return err.Error()
+	}
+	if body {
+		b = append(b, r.Body()...)
+	}
+	return string(b)
 }
