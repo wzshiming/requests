@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"time"
 
+	"golang.org/x/net/html/charset"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -210,14 +211,21 @@ func (c *Client) do(req *Request) (*Response, error) {
 
 	var body []byte
 	if resp.Body != nil {
-		defer func() {
-			resp.Body.Close()
-		}()
 		if !req.discardResponse {
-			body, err = ioutil.ReadAll(resp.Body)
+			defer func() {
+				resp.Body.Close()
+			}()
+			contentType := resp.Header.Get("Content-Type")
+			r0, err := charset.NewReader(resp.Body, contentType)
 			if err != nil {
 				return nil, err
 			}
+			body, err = ioutil.ReadAll(r0)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			resp.Body.Close()
 		}
 	}
 	response := &Response{
