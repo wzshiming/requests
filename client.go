@@ -47,6 +47,12 @@ func (c *Client) NewRequest() *Request {
 	return newRequest(c)
 }
 
+// AddCookies method adds cookie to the client.
+func (c *Client) AddCookies(u *url.URL, cookies []*http.Cookie) *Client {
+	c.cli.Jar.SetCookies(u, cookies)
+	return c
+}
+
 // SetCookieJar method set cookie jar.
 func (c *Client) SetCookieJar(jar *cookiejar.Jar) *Client {
 	c.cli.Jar = jar
