@@ -12,6 +12,7 @@ import (
 	"net/http/httputil"
 	"net/textproto"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -261,7 +262,7 @@ func (r *Request) SetDiscardResponse(discard bool) *Request {
 
 // SetMethod method sets method in the HTTP request.
 func (r *Request) SetMethod(method string) *Request {
-	r.method = method
+	r.method = strings.ToUpper(method)
 	return r
 }
 
