@@ -44,8 +44,10 @@ func newRequest(c *Client) *Request {
 func (r *Request) Clone() *Request {
 	n := &Request{}
 	*n = *r
-	bu := *n.baseURL
-	n.baseURL = &bu
+	if n.baseURL != nil {
+		bu := *n.baseURL
+		n.baseURL = &bu
+	}
 	return n
 }
 
