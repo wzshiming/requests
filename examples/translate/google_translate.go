@@ -10,6 +10,7 @@ import (
 var host = `https://translate.googleapis.com/translate_a/single`
 
 var gt = requests.NewClient().
+	SetLogLevel(requests.LogError).
 	SetSkipVerify(true).
 	NewRequest().
 	SetTimeout(time.Second*2).
