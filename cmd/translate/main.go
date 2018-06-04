@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/wzshiming/requests/examples/translate"
+	"github.com/wzshiming/requests/util/translate"
 )
 
 var (
