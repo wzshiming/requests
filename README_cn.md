@@ -1,4 +1,4 @@
-# HTTP Requests for Humans
+# 友好的 HTTP 请求
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/wzshiming/requests)](https://goreportcard.com/report/github.com/wzshiming/requests)
 [![GoDoc](https://godoc.org/github.com/wzshiming/requests?status.svg)](https://godoc.org/github.com/wzshiming/requests)
@@ -7,16 +7,16 @@
 - [English](https://github.com/wzshiming/requests/blob/master/README.md)
 - [简体中文](https://github.com/wzshiming/requests/blob/master/README_cn.md)
 
-## Install
+## 安装
 
 ``` shell
 go get -u -v github.com/wzshiming/requests
 ```
 
-## Usage
+## 用法
 
-[API Documentation](https://godoc.org/github.com/wzshiming/requests)
+[API 文档](https://godoc.org/github.com/wzshiming/requests)
 
-## License
+## 许可证
 
-Pouch is licensed under the MIT License. See [LICENSE](https://github.com/wzshiming/requests/blob/master/LICENSE) for the full license text.
+软包根据MIT License。有关完整的许可证文本，请参阅[LICENSE](https://github.com/wzshiming/requests/blob/master/LICENSE)。
