@@ -2,6 +2,7 @@ package translate
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/wzshiming/requests"
@@ -34,8 +35,9 @@ func GoogleTranslate(text, sourcelang, targetlang string) (string, error) {
 
 	// [[["Hello there","你好",null,null,1]],null,"zh-CN",null,null,null,1,null,[["zh-CN"],null,[1],["zh-CN"]]]
 	body := resp.Body()
+
 	rms := []json.RawMessage{}
-	for i := 0; i != 3; i++ {
+	for i := 0; i != 2; i++ {
 		err := json.Unmarshal(body, &rms)
 		if err != nil {
 			return "", err
@@ -43,5 +45,18 @@ func GoogleTranslate(text, sourcelang, targetlang string) (string, error) {
 		body = []byte(rms[0])
 	}
 
-	return string(body[1 : len(body)-1]), nil
+	ret := []string{}
+	for _, v := range rms {
+		b := []json.RawMessage{}
+		err := json.Unmarshal([]byte(v), &b)
+		if err != nil {
+			return "", err
+		}
+		by := b[0]
+		by = by[1 : len(by)-1]
+		ret = append(ret, string(by))
+	}
+	text = strings.Join(ret, "\n")
+	text = strings.Replace(text, "\\n", "\n", -1)
+	return text, nil
 }
