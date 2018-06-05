@@ -56,7 +56,7 @@ func GoogleTranslate(text, sourcelang, targetlang string) (string, error) {
 		by = by[1 : len(by)-1]
 		ret = append(ret, string(by))
 	}
-	text = strings.Join(ret, "\n")
+	text = strings.Join(ret, " ")
 	text = strings.Replace(text, "\\n", "\n", -1)
 	return text, nil
 }
