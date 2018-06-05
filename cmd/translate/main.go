@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -36,15 +40,37 @@ func init() {
 
 func main() {
 	a := flag.Args()
-	if len(a) == 0 || *to == "" {
+	if *to == "" {
 		flag.Usage()
 		return
 	}
-	text := strings.Join(a, " ")
-	ret, err := translate.GoogleTranslate(text, *from, *to)
-	if err != nil {
-		fmt.Println(err)
+	var reader *bufio.Reader
+	if len(a) == 0 {
+		buf, _ := ioutil.ReadAll(os.Stdin)
+		reader = bufio.NewReader(bytes.NewBuffer(buf))
+	} else {
+		text := strings.Join(a, " ")
+		reader = bufio.NewReader(bytes.NewBufferString(text))
+	}
+	if reader == nil {
+		flag.Usage()
 		return
 	}
-	fmt.Println(ret)
+
+	for {
+		line, _, err := reader.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				return
+			}
+			fmt.Println(err)
+			return
+		}
+		ret, err := translate.GoogleTranslate(string(line), *from, *to)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(ret)
+	}
 }
