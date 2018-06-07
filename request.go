@@ -51,8 +51,8 @@ func (r *Request) Clone() *Request {
 	return n
 }
 
-// SetBaseURL method is to set URL in the client instance.
-func (r *Request) SetBaseURL(u *url.URL) *Request {
+// SetURL method is to set URL in the client instance.
+func (r *Request) SetURL(u *url.URL) *Request {
 	if u == nil {
 		r.baseURL = nil
 		return r
@@ -76,8 +76,8 @@ func (r *Request) SetBaseURL(u *url.URL) *Request {
 	return r
 }
 
-// SetURL method is to set URL in the client instance.
-func (r *Request) SetURL(rawurl string) *Request {
+// SetURLByStr method is to set URL in the client instance.
+func (r *Request) SetURLByStr(rawurl string) *Request {
 	var nu *url.URL
 	var err error
 	if r.baseURL == nil {
@@ -88,7 +88,7 @@ func (r *Request) SetURL(rawurl string) *Request {
 	if err != nil {
 		r.client.printError(err)
 	}
-	r.SetBaseURL(nu)
+	r.SetURL(nu)
 	return r
 }
 
@@ -270,42 +270,42 @@ func (r *Request) SetMethod(method string) *Request {
 
 // Head method does HEAD HTTP request.
 func (r *Request) Head(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodHead).SetURL(url).do()
+	return r.Clone().SetMethod(MethodHead).SetURLByStr(url).do()
 }
 
 // Get method does GET HTTP request.
 func (r *Request) Get(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodGet).SetURL(url).do()
+	return r.Clone().SetMethod(MethodGet).SetURLByStr(url).do()
 }
 
 // Post method does POST HTTP request.
 func (r *Request) Post(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodPost).SetURL(url).do()
+	return r.Clone().SetMethod(MethodPost).SetURLByStr(url).do()
 }
 
 // Put method does PUT HTTP request.
 func (r *Request) Put(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodPut).SetURL(url).do()
+	return r.Clone().SetMethod(MethodPut).SetURLByStr(url).do()
 }
 
 // Delete method does DELETE HTTP request.
 func (r *Request) Delete(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodDelete).SetURL(url).do()
+	return r.Clone().SetMethod(MethodDelete).SetURLByStr(url).do()
 }
 
 // Options method does OPTIONS HTTP request.
 func (r *Request) Options(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodOptions).SetURL(url).do()
+	return r.Clone().SetMethod(MethodOptions).SetURLByStr(url).do()
 }
 
 // Trace method does TRACE HTTP request.
 func (r *Request) Trace(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodTrace).SetURL(url).do()
+	return r.Clone().SetMethod(MethodTrace).SetURLByStr(url).do()
 }
 
 // Patch method does PATCH HTTP request.
 func (r *Request) Patch(url string) (*Response, error) {
-	return r.Clone().SetMethod(MethodPatch).SetURL(url).do()
+	return r.Clone().SetMethod(MethodPatch).SetURLByStr(url).do()
 }
 
 // Do method performs the HTTP request

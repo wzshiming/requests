@@ -142,6 +142,16 @@ func (c *Client) SetProxyURL(u *url.URL) *Client {
 	return c.SetProxyFunc(http.ProxyURL(u))
 }
 
+// SetProxyURLByStr method sets the Proxy URL.
+func (c *Client) SetProxyURLByStr(rawurl string) *Client {
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		c.printError(err)
+		return c
+	}
+	return c.SetProxyURL(u)
+}
+
 // AddRootCert method helps to add one or more root certificates into requests client
 func (c *Client) AddRootCert(cert *x509.Certificate) *Client {
 	config, err := c.getTLSConfig()
@@ -225,7 +235,7 @@ func (c *Client) do(req *Request) (*Response, error) {
 			defer func() {
 				resp.Body.Close()
 			}()
-			contentType := resp.Header.Get("Content-Type")
+			contentType := resp.Header.Get(HeaderContentType)
 			r0, err := charset.NewReader(resp.Body, contentType)
 			if err != nil {
 				return nil, err
