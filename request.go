@@ -40,7 +40,7 @@ func newRequest(c *Client) *Request {
 	}
 }
 
-// Clone method clone the request
+// Clone returns clone the request
 func (r *Request) Clone() *Request {
 	n := &Request{}
 	*n = *r
@@ -51,7 +51,7 @@ func (r *Request) Clone() *Request {
 	return n
 }
 
-// SetURL method is to set URL in the client instance.
+// SetURL sets URL in the client instance.
 func (r *Request) SetURL(u *url.URL) *Request {
 	if u == nil {
 		r.baseURL = nil
@@ -76,7 +76,7 @@ func (r *Request) SetURL(u *url.URL) *Request {
 	return r
 }
 
-// SetURLByStr method is to set URL in the client instance.
+// SetURLByStr sets URL in the client instance.
 func (r *Request) SetURLByStr(rawurl string) *Request {
 	var nu *url.URL
 	var err error
@@ -92,18 +92,18 @@ func (r *Request) SetURLByStr(rawurl string) *Request {
 	return r
 }
 
-// SetContext method sets the context.Context for current Request.
+// SetContext sets context.Context for current Request.
 func (r *Request) SetContext(ctx context.Context) *Request {
 	r.ctx = ctx
 	return r
 }
 
-// SetTimeout method sets the timeout for current Request.
+// SetTimeout sets timeout for current Request.
 func (r *Request) SetTimeout(timeout time.Duration) *Request {
 	return r.SetDeadline(time.Now().Add(timeout))
 }
 
-// SetDeadline method sets the deadline for current Request.
+// SetDeadline sets deadline for current Request.
 func (r *Request) SetDeadline(d time.Time) *Request {
 	if r.ctx == nil {
 		r.ctx = context.TODO()
@@ -122,76 +122,76 @@ func (r *Request) isCancelled() bool {
 	return r.ctx != nil && r.ctx.Err() != nil
 }
 
-// SetHeader method is to sets a single header field and its value in the current request.
+// SetHeader sets header field and its value in the current request.
 func (r *Request) SetHeader(param, value string) *Request {
 	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam.AddReplace(param, value)
 	return r
 }
 
-// AddHeader method is to adds a single header field and its value in the current request.
+// AddHeader adds header field and its value in the current request.
 func (r *Request) AddHeader(param, value string) *Request {
 	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam.Add(param, value)
 	return r
 }
 
-// AddHeaderIfNot method is to adds a single header field and its value in the current request if not.
+// AddHeaderIfNot adds header field and its value in the current request if not.
 func (r *Request) AddHeaderIfNot(param, value string) *Request {
 	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam.AddNoRepeat(param, value)
 	return r
 }
 
-// SetPath method sets single path parameter and its value in the current request.
+// SetPath sets path parameter and its value in the current request.
 func (r *Request) SetPath(param, value string) *Request {
 	r.pathParam.AddReplace(param, value)
 	return r
 }
 
-// AddPathIfNot method is to adds a single path parameter and its value in the current request if not.
+// AddPathIfNot adds path parameter and its value in the current request if not.
 func (r *Request) AddPathIfNot(param, value string) *Request {
 	r.pathParam.AddNoRepeat(param, value)
 	return r
 }
 
-// SetQuery method sets single query parameter and its value in the current request.
+// SetQuery sets query parameter and its value in the current request.
 func (r *Request) SetQuery(param, value string) *Request {
 	r.queryParam.AddReplace(param, value)
 	return r
 }
 
-// AddQuery method is to adds a single query field and its value in the current request.
+// AddQuery adds query field and its value in the current request.
 func (r *Request) AddQuery(param, value string) *Request {
 	r.queryParam.Add(param, value)
 	return r
 }
 
-// AddQueryIfNot method is to adds a single query field and its value in the current request if not.
+// AddQueryIfNot adds query field and its value in the current request if not.
 func (r *Request) AddQueryIfNot(param, value string) *Request {
 	r.queryParam.AddNoRepeat(param, value)
 	return r
 }
 
-// SetForm method appends multiple form parameters with multi-value
+// SetForm sets multiple form parameters with multi-value
 func (r *Request) SetForm(param, value string) *Request {
 	r.formParam.AddReplace(param, value)
 	return r
 }
 
-// AddForm method is to adds a single from field and its value in the current request.
+// AddForm adds from field and its value in the current request.
 func (r *Request) AddForm(param, value string) *Request {
 	r.formParam.Add(param, value)
 	return r
 }
 
-// AddFormIfNot method is to adds a single from field and its value in the current request if not.
+// AddFormIfNot adds from field and its value in the current request if not.
 func (r *Request) AddFormIfNot(param, value string) *Request {
 	r.formParam.AddNoRepeat(param, value)
 	return r
 }
 
-// SetFile method is to set custom data using io.Reader for multipart upload.
+// SetFile sets custom data using io.Reader for multipart upload.
 func (r *Request) SetFile(param, fileName, contentType string, reader io.Reader) *Request {
 	r.multiFiles = append(r.multiFiles, &multiFile{
 		Param:       param,
@@ -202,7 +202,7 @@ func (r *Request) SetFile(param, fileName, contentType string, reader io.Reader)
 	return r
 }
 
-// SetJSON method sets the data encoded by JSON to the request body.
+// SetJSON sets data encoded by JSON to the request body.
 func (r *Request) SetJSON(i interface{}) *Request {
 	data, err := json.Marshal(i)
 	if err != nil {
@@ -214,7 +214,7 @@ func (r *Request) SetJSON(i interface{}) *Request {
 	return r
 }
 
-// SetXML method sets the data encoded by XML to the request body.
+// SetXML sets data encoded by XML to the request body.
 func (r *Request) SetXML(i interface{}) *Request {
 	data, err := xml.Marshal(i)
 	if err != nil {
@@ -226,89 +226,89 @@ func (r *Request) SetXML(i interface{}) *Request {
 	return r
 }
 
-// SetBody method sets the request body for the request.
+// SetBody sets request body for the request.
 func (r *Request) SetBody(body io.Reader) *Request {
 	r.body = body
 	return r
 }
 
-// SetContentType method sets the content type header in the HTTP request.
+// SetContentType sets content type header in the HTTP request.
 func (r *Request) SetContentType(contentType string) *Request {
 	r.SetHeader(HeaderContentType, contentType)
 	return r
 }
 
-// SetBasicAuth method sets the basic authentication header in the HTTP request.
+// SetBasicAuth sets basic authentication header in the HTTP request.
 func (r *Request) SetBasicAuth(username, password string) *Request {
 	r.SetHeader(HeaderAuthorization, "Basic "+basicAuth(username, password))
 	return r
 }
 
-// SetAuthToken method sets bearer auth token header in the HTTP request.
+// SetAuthToken sets bearer auth token header in the HTTP request.
 func (r *Request) SetAuthToken(token string) *Request {
 	r.SetHeader(HeaderAuthorization, "Bearer "+token)
 	return r
 }
 
-// SetUserAgent method sets user agent header in the HTTP request.
+// SetUserAgent sets user agent header in the HTTP request.
 func (r *Request) SetUserAgent(ua string) *Request {
 	r.SetHeader(HeaderUserAgent, ua)
 	return r
 }
 
-// SetDiscardResponse method unread the response body.
+// SetDiscardResponse sets unread the response body.
 func (r *Request) SetDiscardResponse(discard bool) *Request {
 	r.discardResponse = discard
 	return r
 }
 
-// SetMethod method sets method in the HTTP request.
+// SetMethod sets method in the HTTP request.
 func (r *Request) SetMethod(method string) *Request {
 	r.method = strings.ToUpper(method)
 	return r
 }
 
-// Head method does HEAD HTTP request.
+// Head does HEAD HTTP request.
 func (r *Request) Head(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodHead).SetURLByStr(url).do()
 }
 
-// Get method does GET HTTP request.
+// Get does GET HTTP request.
 func (r *Request) Get(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodGet).SetURLByStr(url).do()
 }
 
-// Post method does POST HTTP request.
+// Post does POST HTTP request.
 func (r *Request) Post(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodPost).SetURLByStr(url).do()
 }
 
-// Put method does PUT HTTP request.
+// Put does PUT HTTP request.
 func (r *Request) Put(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodPut).SetURLByStr(url).do()
 }
 
-// Delete method does DELETE HTTP request.
+// Delete does DELETE HTTP request.
 func (r *Request) Delete(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodDelete).SetURLByStr(url).do()
 }
 
-// Options method does OPTIONS HTTP request.
+// Options does OPTIONS HTTP request.
 func (r *Request) Options(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodOptions).SetURLByStr(url).do()
 }
 
-// Trace method does TRACE HTTP request.
+// Trace does TRACE HTTP request.
 func (r *Request) Trace(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodTrace).SetURLByStr(url).do()
 }
 
-// Patch method does PATCH HTTP request.
+// Patch does PATCH HTTP request.
 func (r *Request) Patch(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodPatch).SetURLByStr(url).do()
 }
 
-// Do method performs the HTTP request
+// Do performs the HTTP request
 func (r *Request) Do() (*Response, error) {
 	return r.Clone().do()
 }
@@ -395,14 +395,17 @@ func (r *Request) messageBody() []byte {
 	return body
 }
 
+// String returns the HTTP request basic information
 func (r *Request) String() string {
 	return fmt.Sprintf("%s %s", r.method, r.baseURL.String())
 }
 
+// Message returns the HTTP request all information
 func (r *Request) Message() string {
 	return r.message(true)
 }
 
+// MessageHead returns the HTTP request header information
 func (r *Request) MessageHead() string {
 	return r.message(false)
 }

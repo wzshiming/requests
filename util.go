@@ -11,6 +11,9 @@ import (
 	"sort"
 )
 
+// Common HTTP methods.
+//
+// Unless otherwise noted, these are defined in RFC 7231 section 4.3.
 const (
 	MethodGet     = "GET"
 	MethodHead    = "HEAD"
@@ -38,6 +41,7 @@ const (
 	HeaderAuthorization   = "Authorization"
 )
 
+// Default
 var (
 	DefaultPrefix         = "REQUESTS"
 	DefaultUserAgentValue = DefaultPrefix + " - https://github.com/wzshiming/requests"

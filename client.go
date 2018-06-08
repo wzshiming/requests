@@ -22,10 +22,15 @@ import (
 type logLevel uint8
 
 const (
+	// LogIgnore is ignore all information
 	LogIgnore logLevel = iota
+	// LogError is show Errors Only
 	LogError
+	// LogInfo is show basic information
 	LogInfo
+	// LogMessageHead is show header information
 	LogMessageHead
+	// LogMessageAll is show all information
 	LogMessageAll
 )
 
@@ -49,24 +54,24 @@ type Client struct {
 	proxyFromEnv bool
 }
 
-// NewRequest method creates a request instance.
+// NewRequest creates a request instance.
 func (c *Client) NewRequest() *Request {
 	return newRequest(c)
 }
 
-// AddCookies method adds cookie to the client.
+// AddCookies adds cookie to the client.
 func (c *Client) AddCookies(u *url.URL, cookies []*http.Cookie) *Client {
 	c.cli.Jar.SetCookies(u, cookies)
 	return c
 }
 
-// SetCookieJar method set cookie jar.
+// SetCookieJar sets cookie jar.
 func (c *Client) SetCookieJar(jar *cookiejar.Jar) *Client {
 	c.cli.Jar = jar
 	return c
 }
 
-// WithCookieJar method with default cookie jar.
+// WithCookieJar with default cookie jar.
 func (c *Client) WithCookieJar() *Client {
 	if c.cli.Jar != nil {
 		return c
@@ -80,19 +85,19 @@ func (c *Client) WithCookieJar() *Client {
 	return c.SetCookieJar(jar)
 }
 
-// SetLogLevel method sets log level.
+// SetLogLevel sets log level.
 func (c *Client) SetLogLevel(l logLevel) *Client {
 	c.logLevel = l
 	return c
 }
 
-// SetLogger method sets given writer for logging.
+// SetLogger sets given writer for logging.
 func (c *Client) SetLogger(w io.Writer) *Client {
 	c.log = log.New(w, "["+DefaultPrefix+"] ", 0)
 	return c
 }
 
-// SetLogger method with logger.
+// WithLogger with logger.
 func (c *Client) WithLogger() *Client {
 	if c.log != nil {
 		return c
@@ -100,13 +105,13 @@ func (c *Client) WithLogger() *Client {
 	return c.SetLogger(os.Stdout)
 }
 
-// SetTimeout method sets timeout for request raised from client.
+// SetTimeout sets timeout for request raised from client.
 func (c *Client) SetTimeout(timeout time.Duration) *Client {
 	c.cli.Timeout = timeout
 	return c
 }
 
-// SetTLSClientConfig method sets TLSClientConfig.
+// SetTLSClientConfig sets TLSClientConfig.
 func (c *Client) SetTLSClientConfig(config *tls.Config) *Client {
 	transport, err := c.getTransport()
 	if err != nil {
@@ -117,7 +122,7 @@ func (c *Client) SetTLSClientConfig(config *tls.Config) *Client {
 	return c
 }
 
-// SetKeepAlives method sets the keep alives.
+// SetKeepAlives sets the keep alives.
 func (c *Client) SetKeepAlives(enable bool) *Client {
 	transport, err := c.getTransport()
 	if err != nil {
@@ -128,7 +133,7 @@ func (c *Client) SetKeepAlives(enable bool) *Client {
 	return c
 }
 
-// SetProxyFunc method sets the Proxy function.
+// SetProxyFunc sets the Proxy function.
 func (c *Client) SetProxyFunc(proxy func(*http.Request) (*url.URL, error)) *Client {
 	transport, err := c.getTransport()
 	if err != nil {
@@ -139,12 +144,12 @@ func (c *Client) SetProxyFunc(proxy func(*http.Request) (*url.URL, error)) *Clie
 	return c
 }
 
-// SetProxyURL method sets the Proxy URL.
+// SetProxyURL sets the Proxy URL.
 func (c *Client) SetProxyURL(u *url.URL) *Client {
 	return c.SetProxyFunc(http.ProxyURL(u))
 }
 
-// SetProxyURLByStr method sets the Proxy URL.
+// SetProxyURLByStr sets the Proxy URL.
 func (c *Client) SetProxyURLByStr(rawurl string) *Client {
 	u, err := url.Parse(rawurl)
 	if err != nil {
@@ -154,13 +159,13 @@ func (c *Client) SetProxyURLByStr(rawurl string) *Client {
 	return c.SetProxyURL(u)
 }
 
-// SetProxyFromEnvironment method sets the Proxy URL.
+// SetProxyFromEnvironment sets the Proxy URL.
 func (c *Client) SetProxyFromEnvironment(u bool) *Client {
 	c.proxyFromEnv = u
 	return c
 }
 
-// AddRootCert method helps to add one or more root certificates into requests client
+// AddRootCert adds one or more root certificates into requests client
 func (c *Client) AddRootCert(cert *x509.Certificate) *Client {
 	config, err := c.getTLSConfig()
 	if err != nil {
