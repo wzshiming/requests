@@ -35,7 +35,7 @@ func TestParam(t *testing.T) {
 		}
 	})
 	cli := NewRequest().
-		SetURL(mock.URL()).
+		SetURLByStr(mock.URL()).
 		SetForm("f", "form").
 		SetQuery("q", "query").
 		SetBasicAuth("u", "p").
@@ -57,7 +57,7 @@ func TestContext(t *testing.T) {
 	}
 	_, err = NewRequest().
 		SetTimeout(time.Microsecond).
-		SetURL(mock.URL()).
+		SetURLByStr(mock.URL()).
 		Do()
 	if err == nil {
 		t.Error("No timely interruption")
