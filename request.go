@@ -374,6 +374,15 @@ func (r *Request) fill() (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if r.client.proxyFromEnv {
+		u, err := http.ProxyFromEnvironment(req)
+		if err != nil {
+			return nil, err
+		}
+		r.client.SetProxyURL(u)
+	}
+
 	req.Header = header
 	r.rawRequest = req
 	return req, nil

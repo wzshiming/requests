@@ -41,10 +41,11 @@ func NewClient() *Client {
 
 // Client contains basic
 type Client struct {
-	cli      *http.Client
-	log      *log.Logger
-	logLevel logLevel
-	proxy    *url.URL
+	cli          *http.Client
+	log          *log.Logger
+	logLevel     logLevel
+	proxy        *url.URL
+	proxyFromEnv bool
 }
 
 // NewRequest method creates a request instance.
@@ -150,6 +151,12 @@ func (c *Client) SetProxyURLByStr(rawurl string) *Client {
 		return c
 	}
 	return c.SetProxyURL(u)
+}
+
+// SetProxyFromEnvironment method sets the Proxy URL.
+func (c *Client) SetProxyFromEnvironment(u bool) *Client {
+	c.proxyFromEnv = u
+	return c
 }
 
 // AddRootCert method helps to add one or more root certificates into requests client
