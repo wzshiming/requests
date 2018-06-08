@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -243,11 +244,19 @@ func (c *Client) do(req *Request) (*Response, error) {
 				resp.Body.Close()
 			}()
 			contentType := resp.Header.Get(HeaderContentType)
-			r0, err := charset.NewReader(resp.Body, contentType)
-			if err != nil {
-				return nil, err
+
+			var read io.Reader = resp.Body
+			if _, params, err := mime.ParseMediaType(contentType); err == nil {
+				if _, ok := params["charset"]; ok {
+					tmp, err := charset.NewReader(read, contentType)
+					if err != nil {
+						return nil, err
+					}
+					read = tmp
+				}
 			}
-			body, err = ioutil.ReadAll(r0)
+
+			body, err = ioutil.ReadAll(read)
 			if err != nil {
 				return nil, err
 			}
