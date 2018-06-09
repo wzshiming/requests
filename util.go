@@ -44,7 +44,8 @@ const (
 // Default
 var (
 	DefaultPrefix         = "REQUESTS"
-	DefaultUserAgentValue = DefaultPrefix + " - https://github.com/wzshiming/requests"
+	DefaultVersion        = "1.0"
+	DefaultUserAgentValue = "Mozilla/5.0 (compatible; " + DefaultPrefix + "/" + DefaultVersion + "; +https://github.com/wzshiming/requests)"
 )
 
 // paramPair represent custom data part for header path query form
