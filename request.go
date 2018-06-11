@@ -314,15 +314,10 @@ func (r *Request) Do() (*Response, error) {
 }
 
 func (r *Request) do() (*Response, error) {
-	_, err := r.fill()
-	if err != nil {
-		return nil, err
-	}
-	r.withContext()
 	return r.client.do(r)
 }
 
-func (r *Request) fill() (*http.Request, error) {
+func (r *Request) process() (*http.Request, error) {
 	if r.rawRequest != nil {
 		return r.rawRequest, nil
 	}
@@ -385,6 +380,8 @@ func (r *Request) fill() (*http.Request, error) {
 
 	req.Header = header
 	r.rawRequest = req
+
+	r.withContext()
 	return req, nil
 }
 
@@ -411,7 +408,7 @@ func (r *Request) MessageHead() string {
 }
 
 func (r *Request) message(body bool) string {
-	req, err := r.Clone().fill()
+	req, err := r.Clone().process()
 	if err != nil {
 		return err.Error()
 	}

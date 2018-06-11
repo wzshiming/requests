@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"mime"
 	"net/http"
 	"net/http/httputil"
 	"time"
+
+	"golang.org/x/net/html/charset"
 )
 
 // Response is an object represents executed request and its values.
 type Response struct {
+	contentType string
 	request     *Request
 	rawResponse *http.Response
 	body        []byte
@@ -20,6 +25,11 @@ type Response struct {
 // Body returns HTTP response as []byte array for the executed request.
 func (r *Response) Body() []byte {
 	return r.body
+}
+
+// ContentType returns HTTP response content type
+func (r *Response) ContentType() string {
+	return r.contentType
 }
 
 // Status returns the HTTP status string for the executed request.
@@ -86,4 +96,40 @@ func (r *Response) message(body bool) string {
 		b = append(b, r.Body()...)
 	}
 	return string(b)
+}
+
+func (r *Response) process() error {
+	resp := r.rawResponse
+	if resp.Body == nil {
+		return nil
+	}
+	if r.request.discardResponse {
+		return resp.Body.Close()
+	}
+
+	defer func() {
+		resp.Body.Close()
+	}()
+
+	contentType := resp.Header.Get(HeaderContentType)
+
+	var read io.Reader = resp.Body
+	if typ, params, err := mime.ParseMediaType(contentType); err == nil {
+		if _, ok := params["charset"]; ok {
+			tmp, err := charset.NewReader(read, contentType)
+			if err != nil {
+				return err
+			}
+			read = tmp
+		}
+		contentType = typ
+	}
+
+	body, err := ioutil.ReadAll(read)
+	if err != nil {
+		return err
+	}
+	r.body = body
+	r.contentType = contentType
+	return nil
 }

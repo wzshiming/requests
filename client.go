@@ -5,9 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
-	"mime"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -15,7 +13,6 @@ import (
 	"runtime"
 	"time"
 
-	"golang.org/x/net/html/charset"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -235,45 +232,24 @@ func (c *Client) getTransport() (*http.Transport, error) {
 
 // do executes and returns response
 func (c *Client) do(req *Request) (*Response, error) {
+	_, err := req.process()
+	if err != nil {
+		return nil, err
+	}
 	c.printRequest(req)
 	req.sendAt = time.Now()
 	resp, err := c.cli.Do(req.rawRequest)
 	if err != nil {
 		return nil, err
 	}
-
-	var body []byte
-	if resp.Body != nil {
-		if !req.discardResponse {
-			defer func() {
-				resp.Body.Close()
-			}()
-			contentType := resp.Header.Get(HeaderContentType)
-
-			var read io.Reader = resp.Body
-			if _, params, err := mime.ParseMediaType(contentType); err == nil {
-				if _, ok := params["charset"]; ok {
-					tmp, err := charset.NewReader(read, contentType)
-					if err != nil {
-						return nil, err
-					}
-					read = tmp
-				}
-			}
-
-			body, err = ioutil.ReadAll(read)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			resp.Body.Close()
-		}
-	}
 	response := &Response{
 		request:     req,
 		rawResponse: resp,
-		body:        body,
 		recvAt:      time.Now(),
+	}
+	err = response.process()
+	if err != nil {
+		return nil, err
 	}
 	c.printResponse(response)
 	return response, nil
