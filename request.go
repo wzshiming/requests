@@ -51,6 +51,17 @@ func (r *Request) Clone() *Request {
 	return n
 }
 
+// AddCookies adds cookie to the client.
+func (r *Request) AddCookies(cookies []*http.Cookie) *Request {
+	r.client.AddCookies(r.baseURL, cookies)
+	return r
+}
+
+// Client returns the client of the request
+func (r *Request) Client() *Client {
+	return r.client
+}
+
 // SetURL sets URL in the client instance.
 func (r *Request) SetURL(u *url.URL) *Request {
 	if u == nil {
