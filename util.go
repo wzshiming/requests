@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"strings"
 )
 
 // Common HTTP methods.
@@ -223,4 +224,60 @@ func toMulti(p paramPairs, m multiFiles) (io.Reader, string, error) {
 func basicAuth(username, password string) string {
 	auth := username + ":" + password
 	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func readCookies(line string) (cookies []*http.Cookie) {
+	parts := strings.Split(strings.TrimSpace(line), ";")
+	if len(parts) == 1 && parts[0] == "" {
+		return
+	}
+	// Per-line attributes
+	for i := 0; i < len(parts); i++ {
+		parts[i] = strings.TrimSpace(parts[i])
+		if len(parts[i]) == 0 {
+			continue
+		}
+		name, val := parts[i], ""
+		if j := strings.Index(name, "="); j >= 0 {
+			name, val = name[:j], name[j+1:]
+		}
+
+		// Strip the quotes, if present.
+		if len(val) > 1 && val[0] == '"' && val[len(val)-1] == '"' {
+			val = val[1 : len(val)-1]
+		}
+
+		cookies = append(cookies, &http.Cookie{Name: name, Value: val})
+	}
+
+	return cookies
+}
+
+// Cookies raw to Cookies.
+func Cookies(raw interface{}) []*http.Cookie {
+	switch t := raw.(type) {
+	case []*http.Cookie:
+		return t
+	case *http.Cookie:
+		return []*http.Cookie{t}
+	case http.Cookie:
+		return []*http.Cookie{&t}
+	case string:
+		return readCookies(t)
+	}
+	return nil
+}
+
+// URL raw to URL structure.
+func URL(raw interface{}) *url.URL {
+	switch t := raw.(type) {
+	case *url.URL:
+		return t
+	case url.URL:
+		return &t
+	case string:
+		r, _ := url.Parse(t)
+		return r
+	}
+	return nil
 }
