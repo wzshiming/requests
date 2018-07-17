@@ -23,6 +23,11 @@ type Response struct {
 	recvAt      time.Time
 }
 
+// WriteFile is writes the response body to file.
+func (r *Response) WriteFile(file string) error {
+	return ioutil.WriteFile(file, r.body, 0666)
+}
+
 // Body returns HTTP response as []byte array for the executed request.
 func (r *Response) Body() []byte {
 	return r.body
