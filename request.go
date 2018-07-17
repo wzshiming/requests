@@ -413,8 +413,10 @@ func (r *Request) message(body bool) string {
 		return err.Error()
 	}
 
-	for _, v := range r.client.cli.Jar.Cookies(req.URL) {
-		req.AddCookie(v)
+	if r.client.cli.Jar != nil {
+		for _, v := range r.client.cli.Jar.Cookies(req.URL) {
+			req.AddCookie(v)
+		}
 	}
 
 	b, err := httputil.DumpRequest(req, false)
