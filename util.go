@@ -150,7 +150,7 @@ type multiFiles []*multiFile
 
 func toHeader(header http.Header, p paramPairs) (http.Header, error) {
 	for _, v := range p {
-		header.Add(v.Param, v.Value)
+		header[v.Param] = append(header[v.Param], v.Value)
 	}
 	return header, nil
 }
@@ -158,7 +158,7 @@ func toHeader(header http.Header, p paramPairs) (http.Header, error) {
 func toQuery(rawQuery string, p paramPairs) (string, error) {
 	param, _ := url.ParseQuery(rawQuery)
 	for _, v := range p {
-		param.Add(v.Param, v.Value)
+		param[v.Param] = append(param[v.Param], v.Value)
 	}
 	return param.Encode(), nil
 }

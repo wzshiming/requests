@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
-	"net/textproto"
 	"net/url"
 	"strings"
 	"time"
@@ -135,21 +134,21 @@ func (r *Request) isCancelled() bool {
 
 // SetHeader sets header field and its value in the current request.
 func (r *Request) SetHeader(param, value string) *Request {
-	param = textproto.CanonicalMIMEHeaderKey(param)
+	//	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam.AddReplace(param, value)
 	return r
 }
 
 // AddHeader adds header field and its value in the current request.
 func (r *Request) AddHeader(param, value string) *Request {
-	param = textproto.CanonicalMIMEHeaderKey(param)
+	//	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam.Add(param, value)
 	return r
 }
 
 // AddHeaderIfNot adds header field and its value in the current request if not.
 func (r *Request) AddHeaderIfNot(param, value string) *Request {
-	param = textproto.CanonicalMIMEHeaderKey(param)
+	//	param = textproto.CanonicalMIMEHeaderKey(param)
 	r.headerParam.AddNoRepeat(param, value)
 	return r
 }
