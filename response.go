@@ -40,21 +40,33 @@ func (r *Response) ContentType() string {
 
 // Status returns the HTTP status string for the executed request.
 func (r *Response) Status() string {
+	if r.rawResponse == nil {
+		return "from cache"
+	}
 	return r.rawResponse.Status
 }
 
 // StatusCode returns the HTTP status code for the executed request.
 func (r *Response) StatusCode() int {
+	if r.rawResponse == nil {
+		return 200
+	}
 	return r.rawResponse.StatusCode
 }
 
 // Header returns the response headers
 func (r *Response) Header() http.Header {
+	if r.rawResponse == nil {
+		return nil
+	}
 	return r.rawResponse.Header
 }
 
 // Cookies to access all the response cookies
 func (r *Response) Cookies() []*http.Cookie {
+	if r.rawResponse == nil {
+		return nil
+	}
 	return r.rawResponse.Cookies()
 }
 
