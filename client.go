@@ -49,6 +49,7 @@ type Client struct {
 	logLevel     logLevel
 	proxy        *url.URL
 	proxyFromEnv bool
+	cache        Cache
 }
 
 // NewRequest creates a request instance.
@@ -206,6 +207,12 @@ func (c *Client) SetSkipVerify(b bool) *Client {
 	return c
 }
 
+// SetCache sets cache
+func (c *Client) SetCache(cache Cache) *Client {
+	c.cache = cache
+	return c
+}
+
 // getTLSConfig returns a TLS config
 func (c *Client) getTLSConfig() (*tls.Config, error) {
 	transport, err := c.getTransport()
@@ -237,6 +244,13 @@ func (c *Client) do(req *Request) (*Response, error) {
 		return nil, err
 	}
 	c.printRequest(req)
+	hash := ""
+	if c.cache != nil {
+		hash = c.cache.Hash(req)
+		if resp, ok := c.cache.Load(hash); ok {
+			return resp, nil
+		}
+	}
 	req.sendAt = time.Now()
 	resp, err := c.cli.Do(req.rawRequest)
 	if err != nil {
@@ -252,6 +266,11 @@ func (c *Client) do(req *Request) (*Response, error) {
 		return nil, err
 	}
 	c.printResponse(response)
+	if c.cache != nil {
+		if code := response.StatusCode(); code >= 200 && code < 300 {
+			c.cache.Save(hash, response)
+		}
+	}
 	return response, nil
 }
 
