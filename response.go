@@ -136,8 +136,8 @@ func (r *Response) process() error {
 }
 
 func (r *Response) checkCharset() {
-	e, _, _ := charset.DetermineEncoding(r.body, r.contentType)
-	if e != encoding.Nop && e != nil {
+	e, _, ok := charset.DetermineEncoding(r.body, r.contentType)
+	if ok && e != nil && e != encoding.Nop {
 		read := transform.NewReader(r.RawBody(), e.NewDecoder())
 		r.body, _ = ioutil.ReadAll(read)
 	}
