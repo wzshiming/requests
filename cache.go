@@ -13,6 +13,7 @@ type Cache interface {
 	Hash(*Request) string
 	Load(name string) (*Response, bool)
 	Save(name string, resp *Response)
+	Del(name string)
 }
 
 func FileCacheDir(s string) fileCacheDir {
@@ -58,5 +59,10 @@ func (f fileCacheDir) Save(name string, resp *Response) {
 	}
 	data, _ := json.Marshal(m)
 	ioutil.WriteFile(path.Join(string(f), name), data, 0666)
+	return
+}
+
+func (f fileCacheDir) Del(name string) {
+	os.Remove(path.Join(string(f), name))
 	return
 }

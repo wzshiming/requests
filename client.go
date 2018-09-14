@@ -247,7 +247,9 @@ func (c *Client) do(req *Request) (*Response, error) {
 	hash := ""
 	if c.cache != nil {
 		hash = c.cache.Hash(req)
-		if resp, ok := c.cache.Load(hash); ok {
+		if req.noCache {
+			c.cache.Del(hash)
+		} else if resp, ok := c.cache.Load(hash); ok {
 			return resp, nil
 		}
 	}

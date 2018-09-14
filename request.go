@@ -30,6 +30,7 @@ type Request struct {
 	client          *Client
 	ctx             context.Context
 	discardResponse bool
+	noCache         bool
 }
 
 func newRequest(c *Client) *Request {
@@ -316,6 +317,12 @@ func (r *Request) Trace(url string) (*Response, error) {
 // Patch does PATCH HTTP request.
 func (r *Request) Patch(url string) (*Response, error) {
 	return r.Clone().SetMethod(MethodPatch).SetURLByStr(url).do()
+}
+
+// NoCache Clear the cache for this request
+func (r *Request) NoCache() *Request {
+	r.noCache = true
+	return r
 }
 
 // Do performs the HTTP request
