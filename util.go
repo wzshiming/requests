@@ -163,7 +163,7 @@ func toQuery(rawQuery string, p paramPairs) (string, error) {
 	return param.Encode(), nil
 }
 
-var toPathCompile = regexp.MustCompile(`\{.*\}`)
+var toPathCompile = regexp.MustCompile(`\{[^}]*\}`)
 
 func toPath(path string, p paramPairs) (string, error) {
 	path = toPathCompile.ReplaceAllStringFunc(path, func(s string) string {

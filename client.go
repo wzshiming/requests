@@ -63,10 +63,25 @@ func (c *Client) AddCookies(u *url.URL, cookies []*http.Cookie) *Client {
 	return c
 }
 
+// GetCookie gets cookie.
+func (c *Client) GetCookie(u *url.URL, name string) *http.Cookie {
+	for _, cookie := range c.cli.Jar.Cookies(u) {
+		if cookie.Name == name {
+			return cookie
+		}
+	}
+	return nil
+}
+
 // SetCookieJar sets cookie jar.
-func (c *Client) SetCookieJar(jar *cookiejar.Jar) *Client {
+func (c *Client) SetCookieJar(jar http.CookieJar) *Client {
 	c.cli.Jar = jar
 	return c
+}
+
+// GetCookieJar gets cookie jar.
+func (c *Client) GetCookieJar() http.CookieJar {
+	return c.cli.Jar
 }
 
 // WithCookieJar with default cookie jar.
