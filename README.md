@@ -17,6 +17,8 @@ go get -u -v github.com/wzshiming/requests
 
 [API Documentation](https://godoc.org/github.com/wzshiming/requests)
 
+[Example](https://godoc.org/github.com/wzshiming/translate)
+
 ## License
 
 Pouch is licensed under the MIT License. See [LICENSE](https://github.com/wzshiming/requests/blob/master/LICENSE) for the full license text.

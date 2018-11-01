@@ -17,6 +17,8 @@ go get -u -v github.com/wzshiming/requests
 
 [API 文档](https://godoc.org/github.com/wzshiming/requests)
 
+[示例](https://godoc.org/github.com/wzshiming/translate)
+
 ## 许可证
 
 软包根据MIT License。有关完整的许可证文本，请参阅[LICENSE](https://github.com/wzshiming/requests/blob/master/LICENSE)。
