@@ -258,16 +258,18 @@ func (c *Client) do(req *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.printRequest(req)
+
 	hash := ""
 	if c.cache != nil {
 		hash = c.cache.Hash(req)
 		if req.noCache {
 			c.cache.Del(hash)
 		} else if resp, ok := c.cache.Load(hash); ok {
+			c.printCacheHit(req)
 			return resp, nil
 		}
 	}
+	c.printRequest(req)
 	req.sendAt = time.Now()
 	resp, err := c.cli.Do(req.rawRequest)
 	if err != nil {
@@ -297,15 +299,28 @@ func (c *Client) printError(err error) {
 	}
 }
 
+func (c *Client) printCacheHit(r *Request) {
+	if c.log != nil {
+		switch c.logLevel {
+		case LogInfo:
+			c.log.Printf("CacheHit: %s", r.String())
+		case LogMessageHead:
+			c.log.Printf("CacheHit: %s", r.MessageHead())
+		case LogMessageAll:
+			c.log.Printf("CacheHit: %s", r.Message())
+		}
+	}
+}
+
 func (c *Client) printRequest(r *Request) {
 	if c.log != nil {
 		switch c.logLevel {
 		case LogInfo:
-			c.log.Printf("Request: %s", r.String())
+			c.log.Printf("Request:  %s", r.String())
 		case LogMessageHead:
-			c.log.Printf("Request: %s", r.MessageHead())
+			c.log.Printf("Request:  %s", r.MessageHead())
 		case LogMessageAll:
-			c.log.Printf("Request: %s", r.Message())
+			c.log.Printf("Request:  %s", r.Message())
 		}
 	}
 }
