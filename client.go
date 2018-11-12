@@ -3,7 +3,6 @@ package requests
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -228,6 +227,19 @@ func (c *Client) SetCache(cache Cache) *Client {
 	return c
 }
 
+// SetCheckRedirect sets specifies the policy for handling redirects
+func (c *Client) SetCheckRedirect(f func(req *http.Request, via []*http.Request) error) *Client {
+	c.cli.CheckRedirect = f
+	return c
+}
+
+// NoRedirect disable redirects
+func (c *Client) NoRedirect() *Client {
+	return c.SetCheckRedirect(func(req *http.Request, via []*http.Request) error {
+		return ErrNoRedirect
+	})
+}
+
 // getTLSConfig returns a TLS config
 func (c *Client) getTLSConfig() (*tls.Config, error) {
 	transport, err := c.getTransport()
@@ -249,7 +261,7 @@ func (c *Client) getTransport() (*http.Transport, error) {
 	if transport, ok := c.cli.Transport.(*http.Transport); ok {
 		return transport, nil
 	}
-	return nil, errors.New("not a *http.Transport")
+	return nil, ErrNotTransport
 }
 
 // do executes and returns response
