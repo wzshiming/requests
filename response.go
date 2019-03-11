@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"golang.org/x/net/html/charset"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/transform"
 )
 
 // Response is an object represents executed request and its values.
@@ -126,19 +124,13 @@ func (r *Response) process() error {
 	}
 
 	r.contentType = resp.Header.Get(HeaderContentType)
-	r.body, _ = ioutil.ReadAll(resp.Body)
+	body, err := charset.NewReader(resp.Body, r.contentType)
+	if err != nil {
+		return err
+	}
+	r.body, _ = ioutil.ReadAll(body)
 	if err := resp.Body.Close(); err != nil {
 		return err
 	}
-
-	r.checkCharset()
 	return nil
-}
-
-func (r *Response) checkCharset() {
-	e, _, ok := charset.DetermineEncoding(r.body, r.contentType)
-	if ok && e != nil && e != encoding.Nop {
-		read := transform.NewReader(r.RawBody(), e.NewDecoder())
-		r.body, _ = ioutil.ReadAll(read)
-	}
 }
