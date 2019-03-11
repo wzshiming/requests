@@ -17,7 +17,7 @@ type Cache interface {
 }
 
 func FileCacheDir(s string) fileCacheDir {
-	os.MkdirAll(s, 0666)
+	os.MkdirAll(s, 0755)
 	return fileCacheDir(s)
 }
 
