@@ -89,6 +89,15 @@ func (r *Request) SetURL(u *url.URL) *Request {
 
 // SetURLByStr sets URL in the client instance.
 func (r *Request) SetURLByStr(rawurl string) *Request {
+	r.SetURL(r.GetURL(rawurl))
+	return r
+}
+
+// GetURL gets URL.
+func (r *Request) GetURL(rawurl string) *url.URL {
+	if rawurl == "" {
+		return r.baseURL
+	}
 	var nu *url.URL
 	var err error
 	if r.baseURL == nil {
@@ -99,8 +108,7 @@ func (r *Request) SetURLByStr(rawurl string) *Request {
 	if err != nil {
 		r.client.printError(err)
 	}
-	r.SetURL(nu)
-	return r
+	return nu
 }
 
 // SetContext sets context.Context for current Request.
