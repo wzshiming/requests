@@ -156,9 +156,16 @@ func toHeader(header http.Header, p paramPairs) (http.Header, error) {
 }
 
 func toQuery(rawQuery string, p paramPairs) (string, error) {
-	param, _ := url.ParseQuery(rawQuery)
+	param := url.Values{}
 	for _, v := range p {
 		param[v.Param] = append(param[v.Param], v.Value)
+	}
+	param0, _ := url.ParseQuery(rawQuery)
+	for k, v := range param0 {
+		_, ok := param[k]
+		if !ok {
+			param[k] = v
+		}
 	}
 	return param.Encode(), nil
 }

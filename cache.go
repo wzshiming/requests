@@ -24,7 +24,7 @@ func FileCacheDir(s string) fileCacheDir {
 type fileCacheDir string
 
 func (f fileCacheDir) Hash(r *Request) string {
-	msg := r.Message()
+	msg := r.messageHash()
 	data := md5.Sum([]byte(msg))
 	name := hex.EncodeToString(data[:])
 	return name

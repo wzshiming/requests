@@ -79,7 +79,7 @@ func (r *Request) SetURL(u *url.URL) *Request {
 		qs, _ := url.ParseQuery(r.baseURL.RawQuery)
 		for k, v := range qs {
 			for _, v := range v {
-				r.AddQuery(k, v)
+				r.SetQuery(k, v)
 			}
 		}
 		r.baseURL.RawQuery = ""
@@ -96,7 +96,8 @@ func (r *Request) SetURLByStr(rawurl string) *Request {
 // GetURL gets URL.
 func (r *Request) GetURL(rawurl string) *url.URL {
 	if rawurl == "" {
-		return r.baseURL
+		u, _ := r.processURL()
+		return u
 	}
 	var nu *url.URL
 	var err error
@@ -342,29 +343,42 @@ func (r *Request) do() (*Response, error) {
 	return r.client.do(r)
 }
 
-func (r *Request) process() (*http.Request, error) {
-	if r.rawRequest != nil {
-		return r.rawRequest, nil
-	}
-
+func (r *Request) processURL() (*url.URL, error) {
+	u := r.baseURL
+	q := []string{}
 	// fill path
 	if len(r.pathParam) != 0 {
-		path, err := toPath(r.baseURL.Path, r.pathParam)
+		path, err := toPath(u.Path, r.pathParam)
 		if err != nil {
 			return nil, err
 		}
-		r.baseURL.Path = path
+		q = append(q, path)
+	} else {
+		q = append(q, u.Path)
 	}
 
 	// fill query
 	if len(r.queryParam) != 0 {
-		rq, err := toQuery(r.baseURL.RawQuery, r.queryParam)
+		rq, err := toQuery(u.RawQuery, r.queryParam)
 		if err != nil {
 			return nil, err
 		}
-		r.baseURL.RawQuery = rq
+		q = append(q, rq)
+	} else {
+		q = append(q, u.RawQuery)
 	}
+	return u.Parse(strings.Join(q, "?"))
+}
 
+func (r *Request) process() (*http.Request, error) {
+	if r.rawRequest != nil {
+		return r.rawRequest, nil
+	}
+	u, err := r.processURL()
+	if err != nil {
+		return nil, err
+	}
+	r.baseURL = u
 	if r.body == nil {
 		if len(r.multiFiles) != 0 { // fill multpair
 			body, contentType, err := toMulti(r.formParam, r.multiFiles)
@@ -430,6 +444,22 @@ func (r *Request) Message() string {
 // MessageHead returns the HTTP request header information
 func (r *Request) MessageHead() string {
 	return r.message(false)
+}
+
+func (r *Request) messageHash() string {
+	req, err := r.Clone().process()
+	if err != nil {
+		return err.Error()
+	}
+
+	b, err := httputil.DumpRequest(req, false)
+	if err != nil {
+		return err.Error()
+	}
+
+	b = append(b, r.messageBody()...)
+
+	return string(b)
 }
 
 func (r *Request) message(body bool) string {
