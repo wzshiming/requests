@@ -345,6 +345,9 @@ func (r *Request) do() (*Response, error) {
 
 func (r *Request) processURL() (*url.URL, error) {
 	u := r.baseURL
+	if u == nil {
+		u = &url.URL{}
+	}
 	q := []string{}
 	// fill path
 	if len(r.pathParam) != 0 {
