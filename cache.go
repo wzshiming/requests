@@ -48,6 +48,7 @@ func (f fileCacheDir) Load(name string) (*Response, bool) {
 		return nil, false
 	}
 	resp := Response{
+		location:    m.Location,
 		contentType: m.ContentType,
 		body:        m.Body,
 	}

@@ -126,11 +126,11 @@ func (r *Response) message(body bool) string {
 
 func (r *Response) process() (err error) {
 
-	u, err := r.rawResponse.Location()
-	if err == nil {
+	if u, err := r.rawResponse.Location(); err == nil {
 		r.location = r.request.GetURL(u.String())
+	} else {
+		r.location = r.request.GetURL("")
 	}
-	r.location = r.request.GetURL("")
 
 	resp := r.rawResponse
 	if resp.Body == nil {
