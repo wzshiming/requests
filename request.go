@@ -367,7 +367,7 @@ func (r *Request) processURL() (*url.URL, error) {
 			return nil, err
 		}
 		q = append(q, rq)
-	} else {
+	} else if u.RawQuery != "" {
 		q = append(q, u.RawQuery)
 	}
 	return u.Parse(strings.Join(q, "?"))
