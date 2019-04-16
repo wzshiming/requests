@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/http/httputil"
+	"net/url"
 	"time"
 
 	"golang.org/x/net/html/charset"
@@ -17,11 +18,17 @@ import (
 
 // Response is an object represents executed request and its values.
 type Response struct {
+	location    *url.URL
 	contentType string
 	request     *Request
 	rawResponse *http.Response
 	body        []byte
 	recvAt      time.Time
+}
+
+// Location return request url.
+func (r *Response) Location() *url.URL {
+	return r.location
 }
 
 // WriteFile is writes the response body to file.
@@ -118,6 +125,13 @@ func (r *Response) message(body bool) string {
 }
 
 func (r *Response) process() (err error) {
+
+	u, err := r.rawResponse.Location()
+	if err == nil {
+		r.location = r.request.GetURL(u.String())
+	}
+	r.location = r.request.GetURL("")
+
 	resp := r.rawResponse
 	if resp.Body == nil {
 		return nil
@@ -134,6 +148,7 @@ func (r *Response) process() (err error) {
 	if err := resp.Body.Close(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
