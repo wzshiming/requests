@@ -298,7 +298,7 @@ func (c *Client) do(req *Request) (*Response, error) {
 	}
 	c.printResponse(response)
 	if c.cache != nil {
-		if code := response.StatusCode(); code >= 200 && code < 300 {
+		if code := response.StatusCode(); code >= 200 && code < 400 {
 			c.cache.Save(hash, response)
 		}
 	}
