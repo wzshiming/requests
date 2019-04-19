@@ -236,7 +236,7 @@ func (c *Client) SetCheckRedirect(f func(req *http.Request, via []*http.Request)
 // NoRedirect disable redirects
 func (c *Client) NoRedirect() *Client {
 	return c.SetCheckRedirect(func(req *http.Request, via []*http.Request) error {
-		return ErrNoRedirect
+		return http.ErrUseLastResponse
 	})
 }
 
