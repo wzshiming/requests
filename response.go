@@ -22,6 +22,8 @@ type Response struct {
 	contentType string
 	request     *Request
 	rawResponse *http.Response
+	statusCode  int
+	header      http.Header
 	body        []byte
 	recvAt      time.Time
 }
@@ -56,18 +58,12 @@ func (r *Response) Status() string {
 
 // StatusCode returns the HTTP status code for the executed request.
 func (r *Response) StatusCode() int {
-	if r.rawResponse == nil {
-		return 200
-	}
-	return r.rawResponse.StatusCode
+	return r.statusCode
 }
 
 // Header returns the response headers
 func (r *Response) Header() http.Header {
-	if r.rawResponse == nil {
-		return nil
-	}
-	return r.rawResponse.Header
+	return r.header
 }
 
 // Cookies to access all the response cookies
@@ -125,7 +121,6 @@ func (r *Response) message(body bool) string {
 }
 
 func (r *Response) process() (err error) {
-
 	if u, err := r.rawResponse.Location(); err == nil {
 		r.location = r.request.GetURL(u.String())
 	} else {
@@ -140,6 +135,8 @@ func (r *Response) process() (err error) {
 		return resp.Body.Close()
 	}
 
+	r.statusCode = resp.StatusCode
+	r.header = resp.Header
 	r.contentType = resp.Header.Get(HeaderContentType)
 
 	body := tryCharset(resp.Body, r.contentType)

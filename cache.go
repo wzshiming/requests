@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -33,6 +34,8 @@ func (f fileCacheDir) Hash(r *Request) string {
 
 type cacheMod struct {
 	Location    *url.URL
+	StatusCode  int
+	Header      http.Header
 	Body        []byte
 	ContentType string
 }
@@ -48,6 +51,8 @@ func (f fileCacheDir) Load(name string) (*Response, bool) {
 		return nil, false
 	}
 	resp := Response{
+		statusCode:  m.StatusCode,
+		header:      m.Header,
 		location:    m.Location,
 		contentType: m.ContentType,
 		body:        m.Body,
@@ -57,6 +62,8 @@ func (f fileCacheDir) Load(name string) (*Response, bool) {
 
 func (f fileCacheDir) Save(name string, resp *Response) {
 	m := cacheMod{
+		StatusCode:  resp.StatusCode(),
+		Header:      resp.Header(),
 		Location:    resp.location,
 		Body:        resp.Body(),
 		ContentType: resp.ContentType(),
