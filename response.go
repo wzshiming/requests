@@ -5,15 +5,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"time"
-
-	"golang.org/x/net/html/charset"
-	"golang.org/x/text/encoding"
-	"golang.org/x/text/transform"
 )
 
 // Response is an object represents executed request and its values.
@@ -139,7 +134,7 @@ func (r *Response) process() (err error) {
 	r.header = resp.Header
 	r.contentType = resp.Header.Get(HeaderContentType)
 
-	body := tryCharset(resp.Body, r.contentType)
+	body := TryCharset(resp.Body, r.contentType)
 
 	r.body, _ = ioutil.ReadAll(body)
 	if err := resp.Body.Close(); err != nil {
@@ -147,15 +142,4 @@ func (r *Response) process() (err error) {
 	}
 
 	return nil
-}
-
-func tryCharset(r io.Reader, contentType string) io.Reader {
-	if _, params, err := mime.ParseMediaType(contentType); err == nil {
-		if cs, ok := params["charset"]; ok {
-			if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
-				r = transform.NewReader(r, e.NewDecoder())
-			}
-		}
-	}
-	return r
 }
