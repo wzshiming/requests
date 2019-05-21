@@ -449,20 +449,20 @@ func (r *Request) MessageHead() string {
 	return r.message(false)
 }
 
-func (r *Request) messageHash() string {
+// Unique returns identifies the uniqueness of the request
+func (r *Request) Unique() ([]byte, error) {
 	req, err := r.Clone().process()
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
 
 	b, err := httputil.DumpRequest(req, false)
 	if err != nil {
-		return err.Error()
+		return nil, err
 	}
 
 	b = append(b, r.messageBody()...)
-
-	return string(b)
+	return b, nil
 }
 
 func (r *Request) message(body bool) string {

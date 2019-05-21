@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sync"
 )
 
 type Cache interface {
@@ -23,16 +24,21 @@ func FileCacheDir(s string) fileCacheDir {
 	return fileCacheDir(s)
 }
 
-type fileCacheDir string
+func MemoryCache() memoryCacheDir {
+	return memoryCacheDir{}
+}
 
-func (f fileCacheDir) Hash(r *Request) string {
-	msg := r.messageHash()
-	data := md5.Sum([]byte(msg))
+func Hash(r *Request) string {
+	msg, err := r.Unique()
+	if err != nil {
+		return ""
+	}
+	data := md5.Sum(msg)
 	name := hex.EncodeToString(data[:])
 	return name
 }
 
-type cacheMod struct {
+type CacheModel struct {
 	Location    *url.URL
 	StatusCode  int
 	Header      http.Header
@@ -40,12 +46,48 @@ type cacheMod struct {
 	ContentType string
 }
 
+type memoryCacheDir struct {
+	m sync.Map
+}
+
+func (f memoryCacheDir) Hash(r *Request) string {
+	return Hash(r)
+}
+
+func (f memoryCacheDir) Load(name string) (*Response, bool) {
+	d, ok := f.m.Load(name)
+	if !ok {
+		return nil, false
+	}
+	data, ok := d.(*Response)
+	if !ok {
+		return nil, false
+	}
+	return data, ok
+}
+
+func (f memoryCacheDir) Save(name string, resp *Response) {
+	f.m.Store(name, resp)
+	return
+}
+
+func (f memoryCacheDir) Del(name string) {
+	f.m.Delete(name)
+	return
+}
+
+type fileCacheDir string
+
+func (f fileCacheDir) Hash(r *Request) string {
+	return Hash(r)
+}
+
 func (f fileCacheDir) Load(name string) (*Response, bool) {
 	data, err := ioutil.ReadFile(path.Join(string(f), name))
 	if err != nil {
 		return nil, false
 	}
-	m := cacheMod{}
+	m := CacheModel{}
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return nil, false
@@ -61,7 +103,7 @@ func (f fileCacheDir) Load(name string) (*Response, bool) {
 }
 
 func (f fileCacheDir) Save(name string, resp *Response) {
-	m := cacheMod{
+	m := CacheModel{
 		StatusCode:  resp.StatusCode(),
 		Header:      resp.Header(),
 		Location:    resp.location,
