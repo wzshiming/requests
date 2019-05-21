@@ -46,6 +46,24 @@ type CacheModel struct {
 	ContentType string
 }
 
+func (c *CacheModel) Decode(resp *Response) error {
+	c.StatusCode = resp.statusCode
+	c.Header = resp.header
+	c.Location = resp.location
+	c.Body = resp.body
+	c.ContentType = resp.contentType
+	return nil
+}
+
+func (c *CacheModel) Encode(resp *Response) error {
+	resp.statusCode = c.StatusCode
+	resp.header = c.Header
+	resp.location = c.Location
+	resp.contentType = c.ContentType
+	resp.body = c.Body
+	return nil
+}
+
 type memoryCacheDir struct {
 	m sync.Map
 }
@@ -87,29 +105,20 @@ func (f fileCacheDir) Load(name string) (*Response, bool) {
 	if err != nil {
 		return nil, false
 	}
+
 	m := CacheModel{}
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return nil, false
 	}
-	resp := Response{
-		statusCode:  m.StatusCode,
-		header:      m.Header,
-		location:    m.Location,
-		contentType: m.ContentType,
-		body:        m.Body,
-	}
-	return &resp, true
+	resp := &Response{}
+	m.Encode(resp)
+	return resp, true
 }
 
 func (f fileCacheDir) Save(name string, resp *Response) {
-	m := CacheModel{
-		StatusCode:  resp.StatusCode(),
-		Header:      resp.Header(),
-		Location:    resp.location,
-		Body:        resp.Body(),
-		ContentType: resp.ContentType(),
-	}
+	m := &CacheModel{}
+	m.Decode(resp)
 	data, _ := json.Marshal(m)
 	ioutil.WriteFile(path.Join(string(f), name), data, 0666)
 	return
