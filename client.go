@@ -1,10 +1,12 @@
 package requests
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -131,6 +133,39 @@ func (c *Client) SetTLSClientConfig(config *tls.Config) *Client {
 		return c
 	}
 	transport.TLSClientConfig = config
+	return c
+}
+
+// SetDialContext sets DialContext.
+func (c *Client) SetDialContext(dial func(ctx context.Context, network, addr string) (net.Conn, error)) *Client {
+	transport, err := c.getTransport()
+	if err != nil {
+		c.printError(err)
+		return c
+	}
+	transport.DialContext = dial
+	return c
+}
+
+// SetDial sets Dial.
+func (c *Client) SetDial(dial func(network, addr string) (net.Conn, error)) *Client {
+	transport, err := c.getTransport()
+	if err != nil {
+		c.printError(err)
+		return c
+	}
+	transport.Dial = dial
+	return c
+}
+
+// SetDialTLS sets DialTLS.
+func (c *Client) SetDialTLS(dial func(network, addr string) (net.Conn, error)) *Client {
+	transport, err := c.getTransport()
+	if err != nil {
+		c.printError(err)
+		return c
+	}
+	transport.DialTLS = dial
 	return c
 }
 
@@ -278,6 +313,7 @@ func (c *Client) do(req *Request) (*Response, error) {
 			c.cache.Del(hash)
 		} else if resp, ok := c.cache.Load(hash); ok {
 			c.printCacheHit(req)
+			resp.request = req
 			return resp, nil
 		}
 	}
