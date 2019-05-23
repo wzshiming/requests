@@ -390,7 +390,7 @@ func (r *Request) process() (*http.Request, error) {
 			}
 			r.AddHeaderIfNot(HeaderContentType, contentType)
 			r.body = body
-		} else { // fill form
+		} else if len(r.formParam) != 0 { // fill form
 			body, err := toForm(r.formParam)
 			if err != nil {
 				return nil, err
@@ -428,6 +428,9 @@ func (r *Request) process() (*http.Request, error) {
 }
 
 func (r *Request) messageBody() []byte {
+	if r.rawRequest.Body == nil {
+		return nil
+	}
 	body, _ := ioutil.ReadAll(r.rawRequest.Body)
 	r.rawRequest.Body.Close()
 	r.rawRequest.Body = ioutil.NopCloser(bytes.NewReader(body))
