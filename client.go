@@ -299,9 +299,14 @@ func (c *Client) getTransport() (*http.Transport, error) {
 	return nil, ErrNotTransport
 }
 
+// Process executes and returns response
+func (c *Client) Process(req *http.Request) (*http.Response, error) {
+	return c.cli.Do(req)
+}
+
 // do executes and returns response
 func (c *Client) do(req *Request) (*Response, error) {
-	_, err := req.process()
+	_, err := req.RawRequest()
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +324,7 @@ func (c *Client) do(req *Request) (*Response, error) {
 	}
 	c.printRequest(req)
 	req.sendAt = time.Now()
-	resp, err := c.cli.Do(req.rawRequest)
+	resp, err := c.Process(req.rawRequest)
 	if err != nil {
 		return nil, err
 	}

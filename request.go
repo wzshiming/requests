@@ -373,7 +373,7 @@ func (r *Request) processURL() (*url.URL, error) {
 	return u.Parse(strings.Join(q, "?"))
 }
 
-func (r *Request) process() (*http.Request, error) {
+func (r *Request) RawRequest() (*http.Request, error) {
 	if r.rawRequest != nil {
 		return r.rawRequest, nil
 	}
@@ -454,7 +454,7 @@ func (r *Request) MessageHead() string {
 
 // Unique returns identifies the uniqueness of the request
 func (r *Request) Unique() ([]byte, error) {
-	req, err := r.Clone().process()
+	req, err := r.Clone().RawRequest()
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +469,7 @@ func (r *Request) Unique() ([]byte, error) {
 }
 
 func (r *Request) message(body bool) string {
-	req, err := r.Clone().process()
+	req, err := r.Clone().RawRequest()
 	if err != nil {
 		return err.Error()
 	}

@@ -115,6 +115,10 @@ func (r *Response) message(body bool) string {
 	return string(b)
 }
 
+func (r *Response) RawResponse() *http.Response {
+	return r.rawResponse
+}
+
 func (r *Response) process() (err error) {
 	if u, err := r.rawResponse.Location(); err == nil {
 		r.location = r.request.GetURL(u.String())
