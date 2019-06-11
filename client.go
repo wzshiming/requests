@@ -111,12 +111,13 @@ func (c *Client) SetLogger(w io.Writer) *Client {
 	return c
 }
 
+
 // WithLogger with logger.
 func (c *Client) WithLogger() *Client {
 	if c.log != nil {
 		return c
 	}
-	return c.SetLogger(os.Stdout)
+	return c.SetLogger(os.Stderr)
 }
 
 // SetTimeout sets timeout for request raised from client.
