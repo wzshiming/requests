@@ -149,6 +149,15 @@ func (r *Request) SetHeader(param, value string) *Request {
 	return r
 }
 
+// AddHeaders adds header field and its value in the current request.
+func (r *Request) AddHeaders(param string, value []string) *Request {
+	//	param = textproto.CanonicalMIMEHeaderKey(param)
+	for _, v := range value {
+		r.headerParam.Add(param, v)
+	}
+	return r
+}
+
 // AddHeader adds header field and its value in the current request.
 func (r *Request) AddHeader(param, value string) *Request {
 	//	param = textproto.CanonicalMIMEHeaderKey(param)
@@ -181,6 +190,14 @@ func (r *Request) SetQuery(param, value string) *Request {
 	return r
 }
 
+// AddQuerys adds query field and its value in the current request.
+func (r *Request) AddQuerys(param string, value []string) *Request {
+	for _, v := range value {
+		r.queryParam.Add(param, v)
+	}
+	return r
+}
+
 // AddQuery adds query field and its value in the current request.
 func (r *Request) AddQuery(param, value string) *Request {
 	r.queryParam.Add(param, value)
@@ -196,6 +213,14 @@ func (r *Request) AddQueryIfNot(param, value string) *Request {
 // SetForm sets multiple form parameters with multi-value
 func (r *Request) SetForm(param, value string) *Request {
 	r.formParam.AddReplace(param, value)
+	return r
+}
+
+// AddForm adds froms field and its value in the current request.
+func (r *Request) AddForms(param string, value []string) *Request {
+	for _, v := range value {
+		r.formParam.Add(param, v)
+	}
 	return r
 }
 
