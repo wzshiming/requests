@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 )
 
@@ -20,7 +21,6 @@ type Cache interface {
 }
 
 func FileCacheDir(s string) fileCacheDir {
-	os.MkdirAll(s, 0755)
 	return fileCacheDir(s)
 }
 
@@ -28,22 +28,17 @@ func MemoryCache() memoryCacheDir {
 	return memoryCacheDir{}
 }
 
-func Hash(r *Request) (string, error) {
-	msg, err := r.Unique()
-	if err != nil {
-		return "", err
-	}
-	data := md5.Sum(msg)
-	name := hex.EncodeToString(data[:])
-	return name, nil
-}
-
 type memoryCacheDir struct {
 	m sync.Map
 }
 
 func (f memoryCacheDir) Hash(r *Request) (string, error) {
-	return Hash(r)
+	msg, err := r.RawRequest()
+	if err != nil {
+		return "", err
+	}
+	name := msg.URL.String()
+	return name, nil
 }
 
 func (f memoryCacheDir) Load(name string) (*Response, error) {
@@ -71,7 +66,14 @@ func (f memoryCacheDir) Del(name string) error {
 type fileCacheDir string
 
 func (f fileCacheDir) Hash(r *Request) (string, error) {
-	return Hash(r)
+	msg, err := r.RawRequest()
+	if err != nil {
+		return "", err
+	}
+	name := msg.URL.String()
+	sum := md5.Sum([]byte(name))
+	h := hex.EncodeToString(sum[:])
+	return path.Join(msg.URL.Scheme, msg.URL.Host, msg.URL.Path, h), nil
 }
 
 func (f fileCacheDir) Load(name string) (*Response, error) {
@@ -93,7 +95,13 @@ func (f fileCacheDir) Save(name string, resp *Response) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path.Join(string(f), name), data, 0666)
+	p := filepath.Join(string(f), name)
+	dir, _ := filepath.Split(p)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(p, data, 0644)
 }
 
 func (f fileCacheDir) Del(name string) error {

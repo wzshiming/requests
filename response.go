@@ -33,7 +33,7 @@ func newResponse(resp *http.Response) (*Response, error) {
 }
 
 func (r *Response) init(sendAt time.Time, method string, u *url.URL) {
-	if r.location != nil {
+	if r.location == nil {
 		r.location = u
 	}
 	r.method = method
@@ -114,7 +114,7 @@ func (r *Response) RawBody() io.Reader {
 
 // String returns the HTTP response basic information
 func (r *Response) String() string {
-	return fmt.Sprintf("%s %s %d %d %s", r.method, r.location.String(), r.StatusCode(), r.Size(), r.Time())
+	return fmt.Sprintf("%s %s %d %d %s", r.method, r.location, r.StatusCode(), r.Size(), r.Time())
 }
 
 // Message returns the HTTP response all information

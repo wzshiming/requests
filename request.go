@@ -477,22 +477,6 @@ func (r *Request) MessageHead() string {
 	return r.message(false)
 }
 
-// Unique returns identifies the uniqueness of the request
-func (r *Request) Unique() ([]byte, error) {
-	req, err := r.Clone().RawRequest()
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := httputil.DumpRequest(req, false)
-	if err != nil {
-		return nil, err
-	}
-
-	b = append(b, r.messageBody()...)
-	return b, nil
-}
-
 func (r *Request) message(body bool) string {
 	req, err := r.Clone().RawRequest()
 	if err != nil {
