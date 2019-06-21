@@ -13,14 +13,32 @@ import (
 
 // Response is an object represents executed request and its values.
 type Response struct {
-	location    *url.URL
-	contentType string
-	request     *Request
 	rawResponse *http.Response
-	statusCode  int
-	header      http.Header
 	body        []byte
+	location    *url.URL
+	method      string
+	sendAt      time.Time
 	recvAt      time.Time
+}
+
+func newResponse(resp *http.Response) (*Response, error) {
+	r := &Response{
+		rawResponse: resp,
+	}
+	err := r.process()
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (r *Response) init(sendAt time.Time, method string, u *url.URL) {
+	if r.location != nil {
+		r.location = u
+	}
+	r.method = method
+	r.sendAt = sendAt
+	r.recvAt = time.Now()
 }
 
 // Location return request url.
@@ -40,7 +58,7 @@ func (r *Response) Body() []byte {
 
 // ContentType returns HTTP response content type
 func (r *Response) ContentType() string {
-	return r.contentType
+	return r.rawResponse.Header.Get(HeaderContentType)
 }
 
 // Status returns the HTTP status string for the executed request.
@@ -53,12 +71,12 @@ func (r *Response) Status() string {
 
 // StatusCode returns the HTTP status code for the executed request.
 func (r *Response) StatusCode() int {
-	return r.statusCode
+	return r.rawResponse.StatusCode
 }
 
 // Header returns the response headers
 func (r *Response) Header() http.Header {
-	return r.header
+	return r.rawResponse.Header
 }
 
 // Cookies to access all the response cookies
@@ -71,12 +89,17 @@ func (r *Response) Cookies() []*http.Cookie {
 
 // Time returns the time of HTTP response time that from request we sent and received a request.
 func (r *Response) Time() time.Duration {
-	return r.recvAt.Sub(r.request.sendAt)
+	return r.recvAt.Sub(r.sendAt)
 }
 
-// ReceivedAt returns when response got recevied from server for the request.
-func (r *Response) ReceivedAt() time.Time {
+// RecvAt returns when response got recv from server for the request.
+func (r *Response) RecvAt() time.Time {
 	return r.recvAt
+}
+
+// SendAt returns when response got send from server for the request.
+func (r *Response) SendAt() time.Time {
+	return r.sendAt
 }
 
 // Size returns the HTTP response size in bytes.
@@ -91,7 +114,7 @@ func (r *Response) RawBody() io.Reader {
 
 // String returns the HTTP response basic information
 func (r *Response) String() string {
-	return fmt.Sprintf("%s %s %d %d %s", r.request.method, r.request.baseURL.String(), r.StatusCode(), r.Size(), r.Time())
+	return fmt.Sprintf("%s %s %d %d %s", r.method, r.location.String(), r.StatusCode(), r.Size(), r.Time())
 }
 
 // Message returns the HTTP response all information
@@ -105,45 +128,45 @@ func (r *Response) MessageHead() string {
 }
 
 func (r *Response) message(body bool) string {
-	b, err := httputil.DumpResponse(r.rawResponse, false)
+	b, err := httputil.DumpResponse(r.RawResponse(), body)
 	if err != nil {
 		return err.Error()
-	}
-	if body {
-		b = append(b, r.Body()...)
 	}
 	return string(b)
 }
 
 func (r *Response) RawResponse() *http.Response {
-	return r.rawResponse
+	resp := r.rawResponse
+	if resp == nil {
+		return nil
+	}
+	resp.Body = ioutil.NopCloser(r.RawBody())
+	return resp
 }
 
 func (r *Response) process() (err error) {
-	if u, err := r.rawResponse.Location(); err == nil {
-		r.location = r.request.GetURL(u.String())
-	} else {
-		r.location = r.request.GetURL("")
-	}
-
 	resp := r.rawResponse
-	if resp.Body == nil {
-		return nil
+	if u, err := resp.Location(); err == nil {
+		r.location = u
 	}
-	if r.request.discardResponse {
-		return resp.Body.Close()
-	}
-
-	r.statusCode = resp.StatusCode
-	r.header = resp.Header
-	r.contentType = resp.Header.Get(HeaderContentType)
-
-	body := TryCharset(resp.Body, r.contentType)
-
+	body := TryCharset(resp.Body, r.ContentType())
 	r.body, _ = ioutil.ReadAll(body)
 	if err := resp.Body.Close(); err != nil {
 		return err
 	}
-
+	resp.Body = nil
 	return nil
+}
+
+func (r *Response) MarshalText() ([]byte, error) {
+	return MarshalResponse(r.RawResponse())
+}
+
+func (r *Response) UnarshalText(data []byte) error {
+	resp, err := UnmarshalResponse(data)
+	if err != nil {
+		return err
+	}
+	r.rawResponse = resp
+	return r.process()
 }

@@ -111,7 +111,6 @@ func (c *Client) SetLogger(w io.Writer) *Client {
 	return c
 }
 
-
 // WithLogger with logger.
 func (c *Client) WithLogger() *Client {
 	if c.log != nil {
@@ -314,13 +313,27 @@ func (c *Client) do(req *Request) (*Response, error) {
 
 	hash := ""
 	if c.cache != nil {
-		hash = c.cache.Hash(req)
+		hash, err = c.cache.Hash(req)
+		if err != nil {
+			return nil, err
+		}
 		if req.noCache {
-			c.cache.Del(hash)
-		} else if resp, ok := c.cache.Load(hash); ok {
-			c.printCacheHit(req)
-			resp.request = req
-			return resp, nil
+			err = c.cache.Del(hash)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			response, err := c.cache.Load(hash)
+			switch err {
+			default:
+				return nil, err
+			case nil:
+				c.printCacheHit(req)
+				response.init(req.sendAt, req.method, req.baseURL)
+				return response, nil
+			case ErrNotExist:
+				// No action
+			}
 		}
 	}
 	c.printRequest(req)
@@ -329,19 +342,18 @@ func (c *Client) do(req *Request) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	response := &Response{
-		request:     req,
-		rawResponse: resp,
-		recvAt:      time.Now(),
-	}
-	err = response.process()
+	response, err := newResponse(resp)
 	if err != nil {
 		return nil, err
 	}
+	response.init(req.sendAt, req.method, req.baseURL)
 	c.printResponse(response)
 	if c.cache != nil {
 		if code := response.StatusCode(); code >= 200 && code < 400 {
-			c.cache.Save(hash, response)
+			err = c.cache.Save(hash, response)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return response, nil

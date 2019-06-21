@@ -3,20 +3,20 @@ package requests
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
+	"errors"
 	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"sync"
 )
 
+var ErrNotExist = errors.New("not exist")
+
 type Cache interface {
-	Hash(*Request) string
-	Load(name string) (*Response, bool)
-	Save(name string, resp *Response)
-	Del(name string)
+	Hash(*Request) (string, error)
+	Load(name string) (*Response, error)
+	Save(name string, resp *Response) error
+	Del(name string) error
 }
 
 func FileCacheDir(s string) fileCacheDir {
@@ -28,103 +28,74 @@ func MemoryCache() memoryCacheDir {
 	return memoryCacheDir{}
 }
 
-func Hash(r *Request) string {
+func Hash(r *Request) (string, error) {
 	msg, err := r.Unique()
 	if err != nil {
-		return ""
+		return "", err
 	}
 	data := md5.Sum(msg)
 	name := hex.EncodeToString(data[:])
-	return name
-}
-
-type CacheModel struct {
-	Location    *url.URL
-	StatusCode  int
-	Header      http.Header
-	Body        []byte
-	ContentType string
-}
-
-func (c *CacheModel) Decode(resp *Response) error {
-	c.StatusCode = resp.statusCode
-	c.Header = resp.header
-	c.Location = resp.location
-	c.Body = resp.body
-	c.ContentType = resp.contentType
-	return nil
-}
-
-func (c *CacheModel) Encode(resp *Response) error {
-	resp.statusCode = c.StatusCode
-	resp.header = c.Header
-	resp.location = c.Location
-	resp.contentType = c.ContentType
-	resp.body = c.Body
-	return nil
+	return name, nil
 }
 
 type memoryCacheDir struct {
 	m sync.Map
 }
 
-func (f memoryCacheDir) Hash(r *Request) string {
+func (f memoryCacheDir) Hash(r *Request) (string, error) {
 	return Hash(r)
 }
 
-func (f memoryCacheDir) Load(name string) (*Response, bool) {
+func (f memoryCacheDir) Load(name string) (*Response, error) {
 	d, ok := f.m.Load(name)
 	if !ok {
-		return nil, false
+		return nil, ErrNotExist
 	}
 	data, ok := d.(*Response)
 	if !ok {
-		return nil, false
+		return nil, ErrNotExist
 	}
-	return data, ok
+	return data, nil
 }
 
-func (f memoryCacheDir) Save(name string, resp *Response) {
+func (f memoryCacheDir) Save(name string, resp *Response) error {
 	f.m.Store(name, resp)
-	return
+	return nil
 }
 
-func (f memoryCacheDir) Del(name string) {
+func (f memoryCacheDir) Del(name string) error {
 	f.m.Delete(name)
-	return
+	return nil
 }
 
 type fileCacheDir string
 
-func (f fileCacheDir) Hash(r *Request) string {
+func (f fileCacheDir) Hash(r *Request) (string, error) {
 	return Hash(r)
 }
 
-func (f fileCacheDir) Load(name string) (*Response, bool) {
+func (f fileCacheDir) Load(name string) (*Response, error) {
 	data, err := ioutil.ReadFile(path.Join(string(f), name))
 	if err != nil {
-		return nil, false
+		return nil, ErrNotExist
 	}
 
-	m := CacheModel{}
-	err = json.Unmarshal(data, &m)
-	if err != nil {
-		return nil, false
-	}
 	resp := &Response{}
-	m.Encode(resp)
-	return resp, true
+	err = resp.UnarshalText(data)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
-func (f fileCacheDir) Save(name string, resp *Response) {
-	m := &CacheModel{}
-	m.Decode(resp)
-	data, _ := json.Marshal(m)
-	ioutil.WriteFile(path.Join(string(f), name), data, 0666)
-	return
+func (f fileCacheDir) Save(name string, resp *Response) error {
+	data, err := resp.MarshalText()
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(path.Join(string(f), name), data, 0666)
 }
 
-func (f fileCacheDir) Del(name string) {
-	os.Remove(path.Join(string(f), name))
-	return
+func (f fileCacheDir) Del(name string) error {
+	return os.Remove(path.Join(string(f), name))
 }
