@@ -295,13 +295,14 @@ func URL(raw interface{}) *url.URL {
 }
 
 // TryCharset try charset
-func TryCharset(r io.Reader, contentType string) io.Reader {
-	if _, params, err := mime.ParseMediaType(contentType); err == nil {
+func TryCharset(r io.Reader, contentType string) (string, io.Reader) {
+	mediatype, params, err := mime.ParseMediaType(contentType)
+	if err == nil {
 		if cs, ok := params["charset"]; ok {
 			if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
 				r = transform.NewReader(r, e.NewDecoder())
 			}
 		}
 	}
-	return r
+	return mediatype, r
 }
