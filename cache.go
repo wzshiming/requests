@@ -105,5 +105,6 @@ func (f fileCacheDir) Save(name string, resp *Response) error {
 }
 
 func (f fileCacheDir) Del(name string) error {
-	return os.Remove(path.Join(string(f), name))
+	os.Remove(path.Join(string(f), name))
+	return nil
 }
