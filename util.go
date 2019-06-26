@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"io"
+	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/net/html"
 	"golang.org/x/net/html/charset"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/transform"
@@ -300,9 +302,82 @@ func TryCharset(r io.Reader, contentType string) (string, io.Reader) {
 	if err == nil {
 		if cs, ok := params["charset"]; ok {
 			if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
-				r = transform.NewReader(r, e.NewDecoder())
+				params["charset"] = "UTF-8"
+				return mime.FormatMediaType(mediatype, params), transform.NewReader(r, e.NewDecoder())
+			}
+		} else if mediatype == "text/html" {
+			return TryHTMLCharset(r)
+		}
+	}
+	return contentType, r
+}
+
+// TryHTMLCharset try html charset
+func TryHTMLCharset(r io.Reader) (string, io.Reader) {
+	buf, _ := ioutil.ReadAll(r)
+	reader := bytes.NewReader(buf)
+	root, err := html.Parse(reader)
+	reader.Seek(0, 0)
+	var read io.Reader = reader
+	if err != nil {
+		return "", read
+	}
+
+	if root == nil {
+		return "", read
+	}
+
+	node := root.FirstChild
+
+	for ; node != nil; node = node.NextSibling {
+		if node.Type == html.ElementNode && node.Data == "html" {
+			node = node.FirstChild
+			break
+
+		}
+	}
+
+	if node == nil {
+		return "", read
+	}
+
+	for ; node != nil; node = node.NextSibling {
+		if node.Type == html.ElementNode && node.Data == "head" {
+			node = node.FirstChild
+			break
+		}
+	}
+
+	if node == nil {
+		return "", read
+	}
+
+	for ; node != nil; node = node.NextSibling {
+		if node.Data == "meta" {
+			m := map[string]string{}
+			for _, attr := range node.Attr {
+				m[strings.ToLower(attr.Key)] = attr.Val
+			}
+			switch m["http-equiv"] {
+			case "content-type", "Content-Type":
+				contentType := m["content"]
+				if contentType != "" {
+					node.Parent.RemoveChild(node)
+					newBuf := bytes.NewBuffer(buf[:0])
+					html.Render(newBuf, root)
+					mediatype, params, err := mime.ParseMediaType(contentType)
+					if err == nil {
+						if cs, ok := params["charset"]; ok {
+							if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
+								params["charset"] = "UTF-8"
+								return mime.FormatMediaType(mediatype, params), transform.NewReader(read, e.NewDecoder())
+							}
+						}
+					}
+					return contentType, read
+				}
 			}
 		}
 	}
-	return mediatype, r
+	return "", read
 }
