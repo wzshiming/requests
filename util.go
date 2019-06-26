@@ -33,13 +33,14 @@ const (
 	MethodOptions = "OPTIONS"
 	MethodTrace   = "TRACE"
 
-	CharsetUTF8     = "; charset=utf-8"
-	MimeJSON        = "application/json" + CharsetUTF8
-	MimeXML         = "application/xml" + CharsetUTF8
-	MimeTextPlain   = "text/plain" + CharsetUTF8
-	MimeOctetStream = "application/octet-stream" + CharsetUTF8
-	MimeURLEncoded  = "application/x-www-form-urlencoded" + CharsetUTF8
-	MimeFormData    = "multipart/form-data" + CharsetUTF8
+	charsetPrefix   = "; charset="
+	charsetUTF8     = charsetPrefix + "utf-8"
+	MimeJSON        = "application/json" + charsetUTF8
+	MimeXML         = "application/xml" + charsetUTF8
+	MimeTextPlain   = "text/plain" + charsetUTF8
+	MimeOctetStream = "application/octet-stream" + charsetUTF8
+	MimeURLEncoded  = "application/x-www-form-urlencoded" + charsetUTF8
+	MimeFormData    = "multipart/form-data" + charsetUTF8
 
 	HeaderUserAgent       = "User-Agent"
 	HeaderAccept          = "Accept"
@@ -187,6 +188,14 @@ func toQuery(rawQuery string, p paramPairs, tr transform.Transformer) (string, e
 	for k, v := range param0 {
 		_, ok := param[k]
 		if !ok {
+			if tr != nil {
+				for i, vv := range v {
+					val, _, err := transform.String(tr, vv)
+					if err != nil {
+						v[i] = val
+					}
+				}
+			}
 			param[k] = v
 		}
 	}
@@ -217,7 +226,7 @@ func toPath(path string, p paramPairs, tr transform.Transformer) (string, error)
 	return path, nil
 }
 
-func toForm(p paramPairs, tr transform.Transformer) (io.Reader, error) {
+func toForm(p paramPairs, tr transform.Transformer) (io.Reader, string, error) {
 	vs := url.Values{}
 	for _, v := range p {
 		val := v.Value
@@ -230,7 +239,7 @@ func toForm(p paramPairs, tr transform.Transformer) (io.Reader, error) {
 		}
 		vs.Add(v.Param, val)
 	}
-	return bytes.NewBufferString(vs.Encode()), nil
+	return bytes.NewBufferString(vs.Encode()), MimeURLEncoded, nil
 }
 
 func toMulti(p paramPairs, m multiFiles, tr transform.Transformer) (io.Reader, string, error) {
