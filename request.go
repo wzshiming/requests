@@ -95,15 +95,10 @@ func (r *Request) SetURL(u *url.URL) *Request {
 		r.baseURL.User = nil
 	}
 
-	if r.baseURL.RawQuery != "" {
-		qs, _ := url.ParseQuery(r.baseURL.RawQuery)
-		for k, v := range qs {
-			for _, v := range v {
-				r.SetQuery(k, v)
-			}
-		}
-		r.baseURL.RawQuery = ""
+	for k, v := range u.Query() {
+		r.AddQuerys(k, v)
 	}
+	r.baseURL.RawQuery = ""
 	return r
 }
 

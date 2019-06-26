@@ -176,10 +176,12 @@ func toQuery(p paramPairs, tr transform.Transformer) (string, error) {
 	for _, v := range p {
 		val := v.Value
 		if tr != nil {
-			var err error
-			val, _, err = transform.String(tr, val)
-			if err != nil {
-				val = v.Value
+			vv, err := url.QueryUnescape(val)
+			if err == nil {
+				vv, _, err = transform.String(tr, vv)
+				if err != nil {
+					val = vv
+				}
 			}
 		}
 		param[v.Param] = append(param[v.Param], val)
