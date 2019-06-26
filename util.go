@@ -300,7 +300,7 @@ func URL(raw interface{}) *url.URL {
 func TryCharset(r io.Reader, contentType string) (string, io.Reader) {
 	mediatype, params, err := mime.ParseMediaType(contentType)
 	if err == nil {
-		if cs, ok := params["charset"]; ok {
+		if cs, ok := params["charset"]; ok && cs != "UTF-8" {
 			if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
 				params["charset"] = "UTF-8"
 				return mime.FormatMediaType(mediatype, params), transform.NewReader(r, e.NewDecoder())
@@ -362,12 +362,9 @@ func TryHTMLCharset(r io.Reader) (string, io.Reader) {
 			case "content-type", "Content-Type":
 				contentType := m["content"]
 				if contentType != "" {
-					node.Parent.RemoveChild(node)
-					newBuf := bytes.NewBuffer(buf[:0])
-					html.Render(newBuf, root)
 					mediatype, params, err := mime.ParseMediaType(contentType)
 					if err == nil {
-						if cs, ok := params["charset"]; ok {
+						if cs, ok := params["charset"]; ok && cs != "UTF-8" {
 							if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
 								params["charset"] = "UTF-8"
 								return mime.FormatMediaType(mediatype, params), transform.NewReader(read, e.NewDecoder())
