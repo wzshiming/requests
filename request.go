@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -35,6 +36,7 @@ type Request struct {
 	ctx             context.Context
 	discardResponse bool
 	noCache         bool
+	charset         string
 	transformer     transform.Transformer
 }
 
@@ -62,7 +64,8 @@ func (r *Request) SetCharset(transformer transform.Transformer) *Request {
 }
 
 func (r *Request) SetCharsetWithStr(cs string) *Request {
-	if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
+	if e, charset := charset.Lookup(cs); e != nil && e != encoding.Nop {
+		r.charset = charset
 		return r.SetCharset(e.NewEncoder())
 	}
 	return r
@@ -433,16 +436,26 @@ func (r *Request) RawRequest() (*http.Request, error) {
 			r.AddHeaderIfNot(HeaderContentType, contentType)
 			r.body = body
 		} else if len(r.formParam) != 0 { // fill form
-			body, err := toForm(r.formParam, r.transformer)
+			body, contentType, err := toForm(r.formParam, r.transformer)
 			if err != nil {
 				return nil, err
 			}
-			r.AddHeaderIfNot(HeaderContentType, MimeURLEncoded)
+			r.AddHeaderIfNot(HeaderContentType, contentType)
 			r.body = body
 		}
 	} else {
 		if r.transformer != nil {
 			r.body = transform.NewReader(r.body, r.transformer)
+		}
+	}
+
+	if r.charset != "" {
+		if p, b := r.headerParam.Search(HeaderContentType); b {
+			mediatype, params, err := mime.ParseMediaType(p.Value)
+			if err == nil {
+				params[HeaderContentType] = r.charset
+				r.headerParam.AddReplace(HeaderContentType, mime.FormatMediaType(mediatype, params))
+			}
 		}
 	}
 
