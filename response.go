@@ -149,12 +149,17 @@ func (r *Response) process() (err error) {
 	if u, err := resp.Location(); err == nil {
 		r.location = u
 	}
-	mediatype, body := TryCharset(resp.Body, r.ContentType())
-	r.rawResponse.Header.Set(HeaderContentType, mediatype)
-	r.body, _ = ioutil.ReadAll(body)
-	if err := resp.Body.Close(); err != nil {
+	defer resp.Body.Close()
+	body, mediatype, err := TryCharset(resp.Body, r.ContentType())
+	if err != nil {
 		return err
 	}
+	r.rawResponse.Header.Set(HeaderContentType, mediatype)
+	r.body, err = ioutil.ReadAll(body)
+	if err != nil {
+		return err
+	}
+
 	resp.Body = nil
 	return nil
 }
