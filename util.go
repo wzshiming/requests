@@ -171,7 +171,7 @@ func toHeader(header http.Header, p paramPairs, tr transform.Transformer) (http.
 	return header, nil
 }
 
-func toQuery(rawQuery string, p paramPairs, tr transform.Transformer) (string, error) {
+func toQuery(p paramPairs, tr transform.Transformer) (string, error) {
 	param := url.Values{}
 	for _, v := range p {
 		val := v.Value
@@ -183,21 +183,6 @@ func toQuery(rawQuery string, p paramPairs, tr transform.Transformer) (string, e
 			}
 		}
 		param[v.Param] = append(param[v.Param], val)
-	}
-	param0, _ := url.ParseQuery(rawQuery)
-	for k, v := range param0 {
-		_, ok := param[k]
-		if !ok {
-			if tr != nil {
-				for i, vv := range v {
-					val, _, err := transform.String(tr, vv)
-					if err != nil {
-						v[i] = val
-					}
-				}
-			}
-			param[k] = v
-		}
 	}
 	return param.Encode(), nil
 }

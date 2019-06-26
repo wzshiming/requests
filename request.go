@@ -407,13 +407,11 @@ func (r *Request) processURL() (*url.URL, error) {
 
 	// fill query
 	if len(r.queryParam) != 0 {
-		rq, err := toQuery(u.RawQuery, r.queryParam, r.transformer)
+		rq, err := toQuery(r.queryParam, r.transformer)
 		if err != nil {
 			return nil, err
 		}
 		q = append(q, rq)
-	} else if u.RawQuery != "" {
-		q = append(q, u.RawQuery)
 	}
 	return u.Parse(strings.Join(q, "?"))
 }
@@ -449,7 +447,7 @@ func (r *Request) RawRequest() (*http.Request, error) {
 		}
 	}
 
-	if r.charset != "" {
+	if r.body != nil && r.charset != "" {
 		if p, b := r.headerParam.Search(HeaderContentType); b {
 			mediatype, params, err := mime.ParseMediaType(p.Value)
 			if err == nil {
