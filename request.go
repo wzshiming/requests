@@ -13,6 +13,10 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html/charset"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
 )
 
 // Request type is used to compose and send individual request from client
@@ -31,6 +35,7 @@ type Request struct {
 	ctx             context.Context
 	discardResponse bool
 	noCache         bool
+	transformer     transform.Transformer
 }
 
 func newRequest(c *Client) *Request {
@@ -49,6 +54,18 @@ func (r *Request) Clone() *Request {
 		n.baseURL = &bu
 	}
 	return n
+}
+
+func (r *Request) SetCharset(transformer transform.Transformer) *Request {
+	r.transformer = transformer
+	return r
+}
+
+func (r *Request) SetCharsetWithStr(cs string) *Request {
+	if e, _ := charset.Lookup(cs); e != nil && e != encoding.Nop {
+		return r.SetCharset(e.NewEncoder())
+	}
+	return r
 }
 
 // AddCookies adds cookie to the client.
@@ -376,7 +393,7 @@ func (r *Request) processURL() (*url.URL, error) {
 	q := []string{}
 	// fill path
 	if len(r.pathParam) != 0 {
-		path, err := toPath(u.Path, r.pathParam)
+		path, err := toPath(u.Path, r.pathParam, r.transformer)
 		if err != nil {
 			return nil, err
 		}
@@ -387,7 +404,7 @@ func (r *Request) processURL() (*url.URL, error) {
 
 	// fill query
 	if len(r.queryParam) != 0 {
-		rq, err := toQuery(u.RawQuery, r.queryParam)
+		rq, err := toQuery(u.RawQuery, r.queryParam, r.transformer)
 		if err != nil {
 			return nil, err
 		}
@@ -409,19 +426,23 @@ func (r *Request) RawRequest() (*http.Request, error) {
 	r.baseURL = u
 	if r.body == nil {
 		if len(r.multiFiles) != 0 { // fill multpair
-			body, contentType, err := toMulti(r.formParam, r.multiFiles)
+			body, contentType, err := toMulti(r.formParam, r.multiFiles, r.transformer)
 			if err != nil {
 				return nil, err
 			}
 			r.AddHeaderIfNot(HeaderContentType, contentType)
 			r.body = body
 		} else if len(r.formParam) != 0 { // fill form
-			body, err := toForm(r.formParam)
+			body, err := toForm(r.formParam, r.transformer)
 			if err != nil {
 				return nil, err
 			}
 			r.AddHeaderIfNot(HeaderContentType, MimeURLEncoded)
 			r.body = body
+		}
+	} else {
+		if r.transformer != nil {
+			r.body = transform.NewReader(r.body, r.transformer)
 		}
 	}
 
@@ -432,7 +453,7 @@ func (r *Request) RawRequest() (*http.Request, error) {
 
 	// fill header
 	r.AddHeaderIfNot(HeaderUserAgent, DefaultUserAgentValue)
-	header, err := toHeader(req.Header, r.headerParam)
+	header, err := toHeader(req.Header, r.headerParam, r.transformer)
 	if err != nil {
 		return nil, err
 	}

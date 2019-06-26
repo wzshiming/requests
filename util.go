@@ -155,17 +155,33 @@ type multiFile struct {
 
 type multiFiles []*multiFile
 
-func toHeader(header http.Header, p paramPairs) (http.Header, error) {
+func toHeader(header http.Header, p paramPairs, tr transform.Transformer) (http.Header, error) {
 	for _, v := range p {
-		header[v.Param] = append(header[v.Param], v.Value)
+		val := v.Value
+		if tr != nil {
+			var err error
+			val, _, err = transform.String(tr, val)
+			if err != nil {
+				val = v.Value
+			}
+		}
+		header[v.Param] = append(header[v.Param], val)
 	}
 	return header, nil
 }
 
-func toQuery(rawQuery string, p paramPairs) (string, error) {
+func toQuery(rawQuery string, p paramPairs, tr transform.Transformer) (string, error) {
 	param := url.Values{}
 	for _, v := range p {
-		param[v.Param] = append(param[v.Param], v.Value)
+		val := v.Value
+		if tr != nil {
+			var err error
+			val, _, err = transform.String(tr, val)
+			if err != nil {
+				val = v.Value
+			}
+		}
+		param[v.Param] = append(param[v.Param], val)
 	}
 	param0, _ := url.ParseQuery(rawQuery)
 	for k, v := range param0 {
@@ -179,13 +195,21 @@ func toQuery(rawQuery string, p paramPairs) (string, error) {
 
 var toPathCompile = regexp.MustCompile(`\{[^}]*\}`)
 
-func toPath(path string, p paramPairs) (string, error) {
+func toPath(path string, p paramPairs, tr transform.Transformer) (string, error) {
 	path = toPathCompile.ReplaceAllStringFunc(path, func(s string) string {
 		k := s[1 : len(s)-1]
 		// Because the number is small, it's faster to use the loop directly
 		for _, v := range p {
 			if v.Param == k {
-				return v.Value
+				val := v.Value
+				if tr != nil {
+					var err error
+					val, _, err = transform.String(tr, val)
+					if err != nil {
+						val = v.Value
+					}
+				}
+				return val
 			}
 		}
 		return s
@@ -193,20 +217,36 @@ func toPath(path string, p paramPairs) (string, error) {
 	return path, nil
 }
 
-func toForm(p paramPairs) (io.Reader, error) {
+func toForm(p paramPairs, tr transform.Transformer) (io.Reader, error) {
 	vs := url.Values{}
 	for _, v := range p {
-		vs.Add(v.Param, v.Value)
+		val := v.Value
+		if tr != nil {
+			var err error
+			val, _, err = transform.String(tr, val)
+			if err != nil {
+				val = v.Value
+			}
+		}
+		vs.Add(v.Param, val)
 	}
 	return bytes.NewBufferString(vs.Encode()), nil
 }
 
-func toMulti(p paramPairs, m multiFiles) (io.Reader, string, error) {
+func toMulti(p paramPairs, m multiFiles, tr transform.Transformer) (io.Reader, string, error) {
 	buf := bytes.NewBuffer(nil)
 	mw := multipart.NewWriter(buf)
 
 	for _, v := range p {
-		err := mw.WriteField(v.Param, v.Value)
+		val := v.Value
+		if tr != nil {
+			var err error
+			val, _, err = transform.String(tr, val)
+			if err != nil {
+				val = v.Value
+			}
+		}
+		err := mw.WriteField(v.Param, val)
 		if err != nil {
 			return nil, "", err
 		}
