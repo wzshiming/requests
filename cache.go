@@ -112,7 +112,7 @@ func (f fileCacheDir) Del(name string) error {
 }
 
 func RequestHash(r *http.Request) (string, error) {
-	msg, err := httputil.DumpRequest(r, false)
+	msg, err := httputil.DumpRequest(r, true)
 	if err != nil {
 		return "", err
 	}
