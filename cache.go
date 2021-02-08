@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"io/ioutil"
+	"net/http"
+	"net/http/httputil"
 	"os"
 	"path"
 	"path/filepath"
@@ -33,12 +35,11 @@ type memoryCacheDir struct {
 }
 
 func (f memoryCacheDir) Hash(r *Request) (string, error) {
-	msg, err := r.RawRequest()
+	req, err := r.RawRequest()
 	if err != nil {
 		return "", err
 	}
-	name := msg.URL.String()
-	return name, nil
+	return RequestHash(req)
 }
 
 func (f memoryCacheDir) Load(name string) (*Response, error) {
@@ -66,14 +67,15 @@ func (f memoryCacheDir) Del(name string) error {
 type fileCacheDir string
 
 func (f fileCacheDir) Hash(r *Request) (string, error) {
-	msg, err := r.RawRequest()
+	req, err := r.RawRequest()
 	if err != nil {
 		return "", err
 	}
-	name := msg.URL.String()
-	sum := md5.Sum([]byte(name))
-	h := hex.EncodeToString(sum[:])
-	return path.Join(msg.URL.Scheme, msg.URL.Host, msg.URL.Path, h), nil
+	h, err := RequestHash(req)
+	if err != nil {
+		return "", err
+	}
+	return path.Join(req.URL.Scheme, req.URL.Host, req.URL.Path, h), nil
 }
 
 func (f fileCacheDir) Load(name string) (*Response, error) {
@@ -107,4 +109,13 @@ func (f fileCacheDir) Save(name string, resp *Response) error {
 func (f fileCacheDir) Del(name string) error {
 	os.Remove(path.Join(string(f), name))
 	return nil
+}
+
+func RequestHash(r *http.Request) (string, error) {
+	msg, err := httputil.DumpRequest(r, false)
+	if err != nil {
+		return "", err
+	}
+	sum := md5.Sum(msg)
+	return hex.EncodeToString(sum[:]), nil
 }
